@@ -1,0 +1,131 @@
+from enum import Enum
+import time
+import sys, os
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+
+from common.motor import Motor, GuideMotorStep
+from common.irSensor import InfraredSensor
+from common.server_communication import ServerComm
+from common.models import ProcessModel
+
+class Step(Enum):
+    start = 0
+    input_part_sensor_check = 10
+    wait_server_state = 20
+    go_rail = 30
+    photo_part_detect_sensor_check = 50
+    stop_rail = 100
+    photo_process = 150
+    servo_motor_drive = 300
+    go_rail_next = 350
+    process_check = 370
+    sonic_part_detect_sensor_check = 400
+    slow_rail = 500
+
+current_step = Step.start
+running = True
+
+INPUT_IR_SENSOR_PIN_NO = 17
+PHOTO_IR_SENSOR_PIN_NO = 18
+SONICT_IR_SENSOR_PIN_NO1 = 19
+
+ir_sensor = InfraredSensor(INPUT_IR_SENSOR_PIN_NO)
+Second_ir_sensor = InfraredSensor(PHOTO_IR_SENSOR_PIN_NO)
+Third_ir_sensor = InfraredSensor(SONICT_IR_SENSOR_PIN_NO1)
+
+server_comm = ServerComm()
+
+GO_RAIL_DCMOTOR_PIN_NO = 20
+STOP_RAIL_DCMOTOR_PIN_NO = 21
+SLOW_rAIL_DCMOTOR_PIN_NO = 22
+
+dc_motor = Motor().dc_init(20, 21, 22)
+servo_motor = Motor().servo_init(23)  # 모터 핀 번호
+
+pass_or_fail = ''
+
+while running:
+    print("running : " + str(running))  # 디버깅확인용
+    time.sleep(0.1)
+    INPUT_IR_Sensor = ir_sensor.measure_ir()
+    IMAGE_IR_Sensor = Second_ir_sensor.measure_ir()
+    SONIC_IR_Senso_No1 = Third_ir_sensor.measure_ir()
+
+    match current_step:
+        case Step.start:  # 초기 상태, 시스템 시작
+            print(Step.start)
+            servo_motor.doGuideMotor(GuideMotorStep.stop)  # 서보 정렬
+            dc_motor.stopConveyor()  # DC모터 정지
+            # 시작하기전에 검사할 것들 : 통신확인여부, 모터정렬, 센서 검수
+            current_step = Step.input_part_sensor_check
+        
+        case Step.input_part_sensor_check:
+            print(Step.input_part_sensor_check)
+            if INPUT_IR_Sensor:
+                # 1번핀의 감지상태
+                server_comm.confirmationObject( 0, 'on' )
+                current_step = Step.wait_server_state
+            
+        case Step.wait_server_state:  # 서버로부터 ok 받을 때까지 대기
+            print(Step.wait_server_state)
+            result = server_comm.ready()  # get으로 물어보는 함수
+            time.sleep(1)
+            if result == "ok":
+                current_step = Step.go_rail
+            
+        case Step.go_rail:  # DC모터 구동
+            print(Step.go_rail)
+            result = dc_motor.doConveyor()
+            current_step = Step.photo_part_detect_sensor_check
+
+        case Step.photo_part_detect_sensor_check:  # 포토센서 감지 상태 확인
+            print(Step.photo_part_detect_sensor_check)
+            if IMAGE_IR_Sensor:
+                current_step = Step.stop_rail
+
+        case Step.stop_rail:  # DC모터 정지
+            print(Step.stop_rail)
+            dc_motor.stopConveyor()
+            current_step = Step.photo_process
+        
+        case Step.photo_process:
+            print(Step.photo_process)
+            
+            server_comm.photoStart()
+            result = IMAGE_IR_Sensor  # 이미지 처리 값
+            pass_or_fail = server_comm.photoEnd(result)  # 서버에 값을 전달(result)
+
+            current_step = Step.servo_motor_drive
+                
+        case Step.servo_motor_drive:  # p or f 따라 서보모터 제어
+            motor_step = servo_motor.doGuideMotor(GuideMotorStep.stop)
+            if (pass_or_fail == 'fail'):
+                motor_step = GuideMotorStep.fail
+            else:
+                motor_step = GuideMotorStep.good
+
+            servo_motor.doGuideMotor(motor_step)
+            current_step = Step.go_rail_next
+
+        case Step.go_rail_next:  # DC모터 재구동, 다음 단계로 이동
+            print(Step.go_rail)
+            result = dc_motor.doConveyor()
+            current_step = Step.process_check
+            
+        case Step.process_check:
+            if pass_or_fail == 'fail':  # 불량이므로 5초 대기
+                time.sleep(5)
+                dc_motor.stopConveyor()
+                current_step = Step.start
+            else:
+                current_step = Step.sonic_part_detect_sensor_check
+
+        case Step.sonic_part_detect_sensor_check:  # 초음파센서 물체 감지
+            print(Step.sonic_part_detect_sensor_check)
+            if SONIC_IR_Senso_No1:
+                current_step = Step.slow_rail
+
+        case Step.slow_rail:  # DC모터 천천히 구동
+            print(Step.slow_rail)
+            result = dc_motor.slowConveyor()
+            current_step = Step.start
