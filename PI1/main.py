@@ -29,7 +29,7 @@ INPUT_IR_SENSOR_PIN_NO = 17
 PHOTO_IR_SENSOR_PIN_NO = 18
 SONICT_IR_SENSOR_PIN_NO1 = 19
 
-ir_sensor = InfraredSensor(INPUT_IR_SENSOR_PIN_NO)
+First_ir_sensor = InfraredSensor(INPUT_IR_SENSOR_PIN_NO)
 Second_ir_sensor = InfraredSensor(PHOTO_IR_SENSOR_PIN_NO)
 Third_ir_sensor = InfraredSensor(SONICT_IR_SENSOR_PIN_NO1)
 
@@ -47,7 +47,7 @@ pass_or_fail = ''
 while running:
     print("running : " + str(running))  # 디버깅확인용
     time.sleep(0.1)
-    INPUT_IR_Sensor = ir_sensor.measure_ir()
+    INPUT_IR_Sensor = First_ir_sensor.measure_ir()
     IMAGE_IR_Sensor = Second_ir_sensor.measure_ir()
     SONIC_IR_Senso_No1 = Third_ir_sensor.measure_ir()
 
