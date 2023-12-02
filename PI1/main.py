@@ -40,9 +40,9 @@ server_comm = ServerComm()
 dc_enable_pin = 20
 dc_input1_pin = 21
 dc_input2_pin = 22
-SERVO_PIN_NO = 23
+servo_pin = 23
 dc_motor = Motor().dc_init(dc_enable_pin, dc_input1_pin, dc_input2_pin)
-servo_motor = Motor().servo_init(SERVO_PIN_NO)  # 모터 핀 번호
+servo_motor = Motor().servo_init(servo_pin)  # 모터 핀 번호
 
 pass_or_fail = ''
 
