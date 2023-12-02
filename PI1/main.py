@@ -25,6 +25,7 @@ class Step(Enum):
 current_step = Step.start
 running = True
 
+# 적외선 센서 핀 번호
 INPUT_IR_SENSOR_PIN_NO = 17
 PHOTO_IR_SENSOR_PIN_NO = 18
 SONICT_IR_SENSOR_PIN_NO1 = 19
@@ -35,11 +36,12 @@ Third_ir_sensor = InfraredSensor(SONICT_IR_SENSOR_PIN_NO1)
 
 server_comm = ServerComm()
 
-GO_RAIL_DCMOTOR_PIN_NO = 20
-STOP_RAIL_DCMOTOR_PIN_NO = 21
-SLOW_RAIL_DCMOTOR_PIN_NO = 22
+# DCMOTOR 핀 번호
+dc_enable_pin = 20
+dc_input1_pin = 21
+dc_input2_pin = 22
 SERVO_PIN_NO = 23
-dc_motor = Motor().dc_init(GO_RAIL_DCMOTOR_PIN_NO, STOP_RAIL_DCMOTOR_PIN_NO, SLOW_RAIL_DCMOTOR_PIN_NO)
+dc_motor = Motor().dc_init(dc_enable_pin, dc_input1_pin, dc_input2_pin)
 servo_motor = Motor().servo_init(SERVO_PIN_NO)  # 모터 핀 번호
 
 pass_or_fail = ''
