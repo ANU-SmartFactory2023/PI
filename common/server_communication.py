@@ -3,8 +3,8 @@ import http.client
 import json
 
 #적외선 센서와 2차 센서 역할이 다름으로 모델 추가 및 변경
-from model import SensorModel
-from model import ProcessModel
+from common.models import SensorModel
+from common.models import ProcessModel
 
 # 클래스의 메서드에서 첫 번째 매개변수로 self를 사용하는 것은 파이썬의 규칙 중 하나입니다. 
 # self를 사용하여 클래스의 인스턴스 변수 및 메서드에 접근할 수 있다.
