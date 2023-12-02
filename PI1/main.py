@@ -37,10 +37,10 @@ server_comm = ServerComm()
 
 GO_RAIL_DCMOTOR_PIN_NO = 20
 STOP_RAIL_DCMOTOR_PIN_NO = 21
-SLOW_rAIL_DCMOTOR_PIN_NO = 22
-
-dc_motor = Motor().dc_init(GO_RAIL_DCMOTOR_PIN_NO, STOP_RAIL_DCMOTOR_PIN_NO, SLOW_rAIL_DCMOTOR_PIN_NO)
-servo_motor = Motor().servo_init(23)  # 모터 핀 번호
+SLOW_RAIL_DCMOTOR_PIN_NO = 22
+SERVO_PIN_NO = 23
+dc_motor = Motor().dc_init(GO_RAIL_DCMOTOR_PIN_NO, STOP_RAIL_DCMOTOR_PIN_NO, SLOW_RAIL_DCMOTOR_PIN_NO)
+servo_motor = Motor().servo_init(SERVO_PIN_NO)  # 모터 핀 번호
 
 pass_or_fail = ''
 
