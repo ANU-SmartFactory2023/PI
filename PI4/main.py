@@ -7,20 +7,10 @@ import random
 import sys, os
 from enum import Enum
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from common.moter import Motor, GuideMotorStep
+from common.motor import Motor, GuideMotorStep
 from common.irSensor import InfraredSensor
 from common.lightSensor import LightSensor
 from common.server_communication import ServerComm
-
-
-
-# 현재 스크립트 파일의 디렉토리 경로
-#current_path = os.path.dirname(__file__)
-# 외부 폴더의 경로 지정 (예: /home/pi/external_folder)
-#external_path = os.path.join(current_path, '/home/admin/test/common')
-# sys.path에 외부 폴더 경로 추가
-#sys.path.append(external_path)#
-
 
 class Step( Enum ) :    #각 스텝별 이름, 동사형으로 지을것, 무엇을 하는 스텝인지 알 수 있는 네이밍
      
@@ -39,18 +29,18 @@ pass_or_fail2 = ''
 
 # GPIO 핀 번호 설정
 LIGHT_SENSOR_PIN = 6
-IR_SENSOR_PIN = 7
+LIGHT_IR_SENSOR_PIN = 7
 SERVO_MOTOR_1_PIN = 17
 SERVO_MOTOR_2_PIN = 18
 
 currnet_step = Step.start   #기본설정
 running = True  
-ir_sensor = InfraredSensor( IR_SENSOR_PIN )   #센서 참조
+ir_sensor = InfraredSensor( LIGHT_IR_SENSOR_PIN )   #센서 참조
 light_sensor = LightSensor( LIGHT_SENSOR_PIN )
 server_comm = ServerComm()  #서버참조
-servo_motor_1 = Motor(SERVO_MOTOR_1_PIN) # 주파수 50Hz
-servo_motor_2 = Motor(SERVO_MOTOR_2_PIN)
-dc_motor = Motor # DC모터
+servo_motor_1 = Motor().servo_init(SERVO_MOTOR_1_PIN) # 주파수 50Hz
+servo_motor_2 = Motor().servo_init(SERVO_MOTOR_2_PIN)
+dc_motor = Motor().dc_init(1,2,3) # DC모터
 
 while running:
     print( "running : " + str( running ) )# 디버깅확인용
