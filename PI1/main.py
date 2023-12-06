@@ -106,10 +106,11 @@ while running:
                 motor_step = GuideMotorStep.good
 
             servo_motor.doGuideMotor(motor_step)
+            server_comm.confirmationObject( 1, IMAGE_IR_Sensor, "IMAGE_IR_Sensor_OFF" )
             current_step = Step.go_rail_next
 
         case Step.go_rail_next:  # DC모터 재구동, 다음 단계로 이동
-            print(Step.go_rail)
+            print(Step.go_rail)                
             result = dc_motor.doConveyor()
             current_step = Step.process_check
             
