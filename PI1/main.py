@@ -65,10 +65,10 @@ while running:
             print(Step.input_part_sensor_check)
             if INPUT_IR_Sensor:
                 # 1번핀의 감지상태
-                server_comm.confirmationObject( 0, 'on' )
+                server_comm.confirmationObject( 1, INPUT_IR_Sensor )
                 current_step = Step.wait_server_state
             
-        case Step.wait_server_state:  # 서버로부터 ok 받을 때까지 대기 (통신)
+        case Step.wait_server_state:  # 서버로부터 ok 받을 때까지 대기 ( 통신 )
             print(Step.wait_server_state)
             result = server_comm.ready()  # get으로 물어보는 함수호출 서버에게 현재상태 물어봄
             time.sleep(1)
@@ -90,7 +90,7 @@ while running:
             dc_motor.stopConveyor()
             current_step = Step.photo_process
         
-        case Step.photo_process:    # POST(통신)
+        case Step.photo_process:    # POST( 통신 )
             print(Step.photo_process)
             server_comm.photoStart()    # 서버에게 이미지처리 시작하도록 알림
             result = IMAGE_IR_Sensor  # 이미지 처리 값
@@ -121,9 +121,10 @@ while running:
             else:
                 current_step = Step.sonic_part_detect_sensor_check
 
-        case Step.sonic_part_detect_sensor_check:  # 초음파센서 물체 감지
+        case Step.sonic_part_detect_sensor_check:  # 적외선 물체 감지
             print(Step.sonic_part_detect_sensor_check)
             if SONIC_IR_Senso_No1:
+                server_comm.confirmationObject( 2, SONIC_IR_Senso_No1 )
                 current_step = Step.slow_rail
 
         case Step.slow_rail:  # DC모터 천천히 구동
