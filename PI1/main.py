@@ -68,11 +68,11 @@ while running:
                 server_comm.confirmationObject( 0, 'on' )
                 current_step = Step.wait_server_state
             
-        case Step.wait_server_state:  # 서버로부터 ok 받을 때까지 대기
+        case Step.wait_server_state:  # 서버로부터 ok 받을 때까지 대기 (통신)
             print(Step.wait_server_state)
-            result = server_comm.ready()  # get으로 물어보는 함수
+            result = server_comm.ready()  # get으로 물어보는 함수호출 서버에게 현재상태 물어봄
             time.sleep(1)
-            if result == "ok":
+            if result == "ok":  # ok면 다음 step
                 current_step = Step.go_rail
             
         case Step.go_rail:  # DC모터 구동
@@ -90,10 +90,9 @@ while running:
             dc_motor.stopConveyor()
             current_step = Step.photo_process
         
-        case Step.photo_process:
+        case Step.photo_process:    # POST(통신)
             print(Step.photo_process)
-            
-            server_comm.photoStart()
+            server_comm.photoStart()    # 서버에게 이미지처리 시작하도록 알림
             result = IMAGE_IR_Sensor  # 이미지 처리 값
             pass_or_fail = server_comm.photoEnd(result)  # 서버에 값을 전달(result)
 
