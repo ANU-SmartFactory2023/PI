@@ -123,10 +123,10 @@ class ServerComm :
     # 공정마다 매개변수를 통신 클래스에서 먼저 정의하는 방법
 
     # 포토 공정 시작 시간 전송
-    def photoStart( self ):
+    def photolithographyStart( self ):
         return self.__checkProcess( 1, "start", "photolithography", "0")
     # 포토 공정 종료 타이밍과 센서값 전송
-    def photoEnd( self, processValue):
+    def photolithographyEnd( self, processValue):
         return self.__checkProcess( 1, "end", "photolithography", processValue)
     
     # 식각 공정 시작
@@ -136,18 +136,18 @@ class ServerComm :
     def etchingEnd( self, processValue):
         return self.__checkProcess( 2, "end", "etching", processValue)
 
-    # 이온 주입 공정 시작 
-    def ionlmplantationStart( self ):
+    # EDS 공정 시작 
+    def edsStart( self ):
         return self.__checkProcess( 3, "start", "eds", "0")
-    # 이온 주입 공정 종료
-    def ionlmplantationEnd( self, processValue):
+    # EDS 공정 종료
+    def edsEnd( self, processValue):
         return self.__checkProcess( 3, "end", "eds", processValue)
 
-    # euv 시작 
-    def metalWiringStart( self ):
+    # euv 인쇄 과정 시작 
+    def euvLithographyStart( self ):
         return self.__checkProcess( 4, "start", "euvLithography", "0")
     # 후공정 종료
-    def metalWiringEnd( self, processValue):
+    def euvLithographyEnd( self, processValue):
         return self.__checkProcess( 4, "end", "euvLithography", processValue) 
     
 
