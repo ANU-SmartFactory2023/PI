@@ -51,7 +51,7 @@ while running:
     time.sleep(0.1)
     INPUT_IR_Sensor = First_ir_sensor.measure_ir()
     IMAGE_IR_Sensor = Second_ir_sensor.measure_ir()
-    SONIC_IR_Senso_No1 = Third_ir_sensor.measure_ir()
+    SONIC_IR_Sensor_No1 = Third_ir_sensor.measure_ir()
 
     match current_step:
         case Step.start:  # 초기 상태, 시스템 시작
@@ -68,7 +68,7 @@ while running:
                 server_comm.confirmationObject( 1, INPUT_IR_Sensor )
                 current_step = Step.wait_server_state
             
-        case Step.wait_server_state:  # 서버로부터 ok 받을 때까지 대기 ( 통신 )
+        case Step.wait_server_state:  # 서버로부터 ok 받을 때까지 대기 (통신)
             print(Step.wait_server_state)
             result = server_comm.ready()  # get으로 물어보는 함수호출 서버에게 현재상태 물어봄
             time.sleep(1)
@@ -92,9 +92,9 @@ while running:
         
         case Step.photo_process:    # POST( 통신 )
             print(Step.photo_process)
-            server_comm.photoStart()    # 서버에게 이미지처리 시작하도록 알림
+            server_comm.photolithographyStart()    # 서버에게 이미지처리 시작하도록 알림
             result = IMAGE_IR_Sensor  # 이미지 처리 값
-            pass_or_fail = server_comm.photoEnd(result)  # 서버에 값을 전달(result)
+            pass_or_fail = server_comm.photolithographyEnd(result)  # 서버에 값을 전달(result)
 
             current_step = Step.servo_motor_drive
                 
@@ -123,8 +123,8 @@ while running:
 
         case Step.sonic_part_detect_sensor_check:  # 적외선 물체 감지
             print(Step.sonic_part_detect_sensor_check)
-            if SONIC_IR_Senso_No1:
-                server_comm.confirmationObject( 2, SONIC_IR_Senso_No1 )
+            if SONIC_IR_Sensor_No1:
+                server_comm.confirmationObject( 2, SONIC_IR_Sensor_No1 )
                 current_step = Step.slow_rail
 
         case Step.slow_rail:  # DC모터 천천히 구동
