@@ -138,12 +138,12 @@ class ServerComm :
 
     # 이온 주입 공정 시작 
     def ionlmplantationStart( self ):
-        return self.__checkProcess( 3, "start", "ionlmplantation", "0")
+        return self.__checkProcess( 3, "start", "eds", "0")
     # 이온 주입 공정 종료
     def ionlmplantationEnd( self, processValue):
-        return self.__checkProcess( 3, "end", "ionlmplantation", processValue)
+        return self.__checkProcess( 3, "end", "eds", processValue)
 
-    # 후공정 시작 
+    # euv 시작 
     def metalWiringStart( self ):
         return self.__checkProcess( 4, "start", "euvLithography", "0")
     # 후공정 종료
