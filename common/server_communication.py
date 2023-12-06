@@ -124,10 +124,10 @@ class ServerComm :
 
     # 포토 공정 시작 시간 전송
     def photoStart( self ):
-        return self.__checkProcess( 1, "start", "photo", "0")
+        return self.__checkProcess( 1, "start", "photolithography", "0")
     # 포토 공정 종료 타이밍과 센서값 전송
     def photoEnd( self, processValue):
-        return self.__checkProcess( 1, "end", "photo", processValue)
+        return self.__checkProcess( 1, "end", "photolithography", processValue)
     
     # 식각 공정 시작
     def etchingStart( self ):
@@ -145,10 +145,10 @@ class ServerComm :
 
     # 후공정 시작 
     def metalWiringStart( self ):
-        return self.__checkProcess( 4, "start", "metalWiring", "0")
+        return self.__checkProcess( 4, "start", "euvLithography", "0")
     # 후공정 종료
     def metalWiringEnd( self, processValue):
-        return self.__checkProcess( 4, "end", "metalWiring", processValue) 
+        return self.__checkProcess( 4, "end", "euvLithography", processValue) 
     
 
     # 1~4 차 제조 공정 후 불량품 구분을 위한 센서값 전송 (Post)
