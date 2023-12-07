@@ -29,18 +29,20 @@ pass_or_fail1 = ''
 pass_or_fail2 = ''
 
 # GPIO 핀 번호 설정
-<<<<<<< HEAD
-LIGHT_IR_SENSOR_PIN = 16
-INPUT_IR_SENSOR_PIN = 7
-SERVO_MOTOR_1_PIN = 17
-SERVO_MOTOR_2_PIN = 18
+
+LIGHT_SENSOR_PIN = 16
+LIGHT_IR_SENSOR_PIN = 7
+SERVO_PIN_1 = 17
+SERVO_PIN_2 = 18
+LED_PIN = 21
 
 # GPIO 초기화
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(LIGHT_IR_SENSOR_PIN, GPIO.IN)
-GPIO.setup(INPUT_IR_SENSOR_PIN, GPIO.IN)
-GPIO.setup(SERVO_MOTOR_1_PIN, GPIO.OUT)
-GPIO.setup(SERVO_MOTOR_2_PIN, GPIO.OUT)
+GPIO.setup(LIGHT_SENSOR_PIN, GPIO.IN)
+GPIO.setup(SERVO_PIN_1, GPIO.OUT)
+GPIO.setup(SERVO_PIN_2, GPIO.OUT)
+GPIO.setup(LED_PIN,GPIO.OUT)
 
 def signal_handler(sig, frame):
     print('프로그램을 종료합니다.')
@@ -51,34 +53,21 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 
-current_step = Step.start   #기본설정
-running = True  
-ir_sensor = InfraredSensor( INPUT_IR_SENSOR_PIN )   #센서 참조
-light_sensor = LightSensor( LIGHT_IR_SENSOR_PIN )
-=======
-LIGHT_SENSOR_PIN = 6
-LIGHT_IR_SENSOR_PIN = 7
-SERVO_MOTOR_1_PIN = 17
-SERVO_MOTOR_2_PIN = 18
-
-
-
 
 currnet_step = Step.start   #기본설정
 running = True  
 ir_sensor = InfraredSensor( LIGHT_IR_SENSOR_PIN )   #센서 참조
 light_sensor = LightSensor( LIGHT_SENSOR_PIN )
->>>>>>> 78b905d97fb54333d38305b4834dc9a8aafe4e28
 server_comm = ServerComm()  #서버참조
-servo_motor_1 = Motor().servo_init(SERVO_MOTOR_1_PIN) # 주파수 50Hz
-servo_motor_2 = Motor().servo_init(SERVO_MOTOR_2_PIN)
+servo_motor_1 = Motor().servo_init(SERVO_PIN_1) # 주파수 50Hz
+servo_motor_2 = Motor().servo_init(SERVO_PIN_2)
 dc_motor = Motor().dc_init(1,2,3) # DC모터
 
 while running:
     print( "running : " + str( running ) )# 디버깅확인용
     sleep( 0.1 )
-
-    FOURTH_IR = ir_sensor.measure_ir()
+    LIGHT_SENSOR_PIN = light_sensor.measure_ir()
+    LIGHT_IR_SENSOR = ir_sensor.measure_ir()
     match current_step :
         case Step.start: 
             print( Step.start )
@@ -91,9 +80,9 @@ while running:
             print( Step.fourth_part_irsensor_post )
             
 
-            if( FOURTH_IR == 1 ) :
+            if( LIGHT_IR_SENSOR == 1 ) :
                 #서버에서 적외선 센서 감지 여부 전송
-                detect_reply = server_comm.confirmationObject(4, FOURTH_IR)
+                detect_reply = server_comm.confirmationObject(4, LIGHT_IR_SENSOR)
                 # 답변 중 msg 변수에 "ok" 를 확인할 시
                 if( detect_reply == "ok"):
                     current_step = Step.fourth_part_process_start
@@ -140,13 +129,14 @@ while running:
             print(Step.move_servo)
             servo_motor_1.doGuideMotor(pass_or_fail1)
             servo_motor_2.doGuideMotor(pass_or_fail2) 
-            # server_comm.confirmationObject(4, FOURTH_IR,"FOURTH_IR") 
+            
             current_step = Step.go_rail_next_1
 
         case Step.go_rail_next_1:
             print(Step.go_rail_next_1)
             dc_motor.doConveyor()  # 모터를 구동시킴
-            if(FOURTH_IR == 0):
+            if(LIGHT_IR_SENSOR == 0):
+                server_comm.confirmationObject(4, LIGHT_IR_SENSOR,"LIGHT_IR_SENSOR") 
                 current_step = Step.stop_rail_1
 
         case Step.stop_rail_1:
@@ -159,5 +149,5 @@ while running:
             current_step = Step.end_time
 
         case Step.end_time:
-            detect_reply = server_comm.confirmationObject(4, FOURTH_IR,"allProcessFinish")
+            server_comm.confirmationObject(4, LIGHT_IR_SENSOR,"END_TIME")
             current_step = Step.start
