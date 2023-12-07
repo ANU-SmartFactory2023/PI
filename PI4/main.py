@@ -29,6 +29,7 @@ pass_or_fail1 = ''
 pass_or_fail2 = ''
 
 # GPIO 핀 번호 설정
+<<<<<<< HEAD
 LIGHT_IR_SENSOR_PIN = 16
 INPUT_IR_SENSOR_PIN = 7
 SERVO_MOTOR_1_PIN = 17
@@ -54,6 +55,20 @@ current_step = Step.start   #기본설정
 running = True  
 ir_sensor = InfraredSensor( INPUT_IR_SENSOR_PIN )   #센서 참조
 light_sensor = LightSensor( LIGHT_IR_SENSOR_PIN )
+=======
+LIGHT_SENSOR_PIN = 6
+LIGHT_IR_SENSOR_PIN = 7
+SERVO_MOTOR_1_PIN = 17
+SERVO_MOTOR_2_PIN = 18
+
+
+
+
+currnet_step = Step.start   #기본설정
+running = True  
+ir_sensor = InfraredSensor( LIGHT_IR_SENSOR_PIN )   #센서 참조
+light_sensor = LightSensor( LIGHT_SENSOR_PIN )
+>>>>>>> 78b905d97fb54333d38305b4834dc9a8aafe4e28
 server_comm = ServerComm()  #서버참조
 servo_motor_1 = Motor().servo_init(SERVO_MOTOR_1_PIN) # 주파수 50Hz
 servo_motor_2 = Motor().servo_init(SERVO_MOTOR_2_PIN)
