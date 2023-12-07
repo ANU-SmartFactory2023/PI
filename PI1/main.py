@@ -65,7 +65,7 @@ while running:
             print(Step.input_part_sensor_check)
             if INPUT_IR_SENSOR:
                 # 1번핀의 감지상태
-                server_comm.confirmationObject( 1, INPUT_IR_SENSOR )
+                server_comm.confirmationObject( 1, INPUT_IR_SENSOR, "INPUT_IR_SENSOR")
                 current_step = Step.wait_server_state
             
         case Step.wait_server_state:  # 서버로부터 ok 받을 때까지 대기 (통신)
