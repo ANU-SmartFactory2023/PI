@@ -15,7 +15,7 @@ class ServerComm :
     
     #__init__ 설정 메서드에 서버 ip주소 및 포트번호 설정
     def __init__( self ) :
-        self.conn = http.client.HTTPConnection( '192.168.41.238', 5000 ) # 서버 ip, 포트
+        self.conn = http.client.HTTPConnection( '192.168.41.238', 5000 ) # 서버 ip, 포트;
         self.conn.timeout = 3
 
     # HTTP 통신 Sensor Post 정의
