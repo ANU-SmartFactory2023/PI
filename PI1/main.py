@@ -26,12 +26,12 @@ current_step = Step.start
 running = True
 
 # 적외선 센서 핀 번호
-INPUT_IR_SENSOR_PIN_NO = 17
-PHOTO_IR_SENSOR_PIN_NO = 18
+INPUT_IR_SENSOR_PIN = 17
+PHOTO_IR_SENSOR_PIN = 18
 SONICT_IR_SENSOR_PIN_NO1 = 19
 
-First_ir_sensor = InfraredSensor(INPUT_IR_SENSOR_PIN_NO)
-Second_ir_sensor = InfraredSensor(PHOTO_IR_SENSOR_PIN_NO)
+First_ir_sensor = InfraredSensor(INPUT_IR_SENSOR_PIN)
+Second_ir_sensor = InfraredSensor(PHOTO_IR_SENSOR_PIN)
 Third_ir_sensor = InfraredSensor(SONICT_IR_SENSOR_PIN_NO1)
 
 server_comm = ServerComm()
