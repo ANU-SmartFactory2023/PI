@@ -149,6 +149,12 @@ class ServerComm :
                 s.sensorState = "on"
             else:
                 s.sensorState = "off"
+
+        elif(processName == "END_TIME"):
+            s.sensorName = processName
+            # 서버에서 on과 off에 따라 로직이 달라짐
+            s.sensorState = "finalEnd"
+            
         # 적외선 센서는 한가지 종류만 있어 "detect" 로 고정
          
 

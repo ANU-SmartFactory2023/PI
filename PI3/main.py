@@ -163,7 +163,10 @@ while running:
         case Step.final_go_rail:
             print( Step.final_go_rail)
             dc_motor.doConveyor()
-            current_step = Step.final_stop_rail
+            #######################################
+            if(RELAY_IR_SENSOR == 0):
+                servercomm.confirmationObject(3, RELAY_IR_SENSOR, "RELAY_IR_SENSOR")
+                current_step = Step.final_stop_rail
         
          
         case Step.final_stop_rail:
