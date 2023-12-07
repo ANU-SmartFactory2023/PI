@@ -1,6 +1,7 @@
-
+import RPi.GPIO as GPIO
 from enum import Enum
 import os
+import signal
 from time import sleep
 import sys
 import random
@@ -11,16 +12,6 @@ from common.motor import Motor, GuideMotorStep
 from common.irSensor import InfraredSensor
 from common.lightSensor import LightSensor
 from common.server_communication import ServerComm
-
-
-
-# 현재 스크립트 파일의 디렉토리 경로
-#current_path = os.path.dirname(__file__)
-# 외부 폴더의 경로 지정 (예: /home/pi/external_folder)
-#external_path = os.path.join(current_path, '/home/admin/test/common')
-# sys.path에 외부 폴더 경로 추가
-#sys.path.append(external_path)#
-
 
 class Step( Enum ) :    #각 스텝별 이름, 동사형으로 지을것, 무엇을 하는 스텝인지 알 수 있는 네이밍
      
@@ -38,6 +29,33 @@ pass_or_fail1 = ''
 pass_or_fail2 = ''
 
 # GPIO 핀 번호 설정
+<<<<<<< HEAD
+LIGHT_IR_SENSOR_PIN = 16
+INPUT_IR_SENSOR_PIN = 7
+SERVO_MOTOR_1_PIN = 17
+SERVO_MOTOR_2_PIN = 18
+
+# GPIO 초기화
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(LIGHT_IR_SENSOR_PIN, GPIO.IN)
+GPIO.setup(INPUT_IR_SENSOR_PIN, GPIO.IN)
+GPIO.setup(SERVO_MOTOR_1_PIN, GPIO.OUT)
+GPIO.setup(SERVO_MOTOR_2_PIN, GPIO.OUT)
+
+def signal_handler(sig, frame):
+    print('프로그램을 종료합니다.')
+    GPIO.cleanup()
+    sys.exit(0)
+
+# SIGINT 신호(Ctrl+C)에 대한 핸들러 등록
+signal.signal(signal.SIGINT, signal_handler)
+
+
+current_step = Step.start   #기본설정
+running = True  
+ir_sensor = InfraredSensor( INPUT_IR_SENSOR_PIN )   #센서 참조
+light_sensor = LightSensor( LIGHT_IR_SENSOR_PIN )
+=======
 LIGHT_SENSOR_PIN = 6
 LIGHT_IR_SENSOR_PIN = 7
 SERVO_MOTOR_1_PIN = 17
@@ -50,6 +68,7 @@ currnet_step = Step.start   #기본설정
 running = True  
 ir_sensor = InfraredSensor( LIGHT_IR_SENSOR_PIN )   #센서 참조
 light_sensor = LightSensor( LIGHT_SENSOR_PIN )
+>>>>>>> 78b905d97fb54333d38305b4834dc9a8aafe4e28
 server_comm = ServerComm()  #서버참조
 servo_motor_1 = Motor().servo_init(SERVO_MOTOR_1_PIN) # 주파수 50Hz
 servo_motor_2 = Motor().servo_init(SERVO_MOTOR_2_PIN)
@@ -58,6 +77,7 @@ dc_motor = Motor().dc_init(1,2,3) # DC모터
 while running:
     print( "running : " + str( running ) )# 디버깅확인용
     sleep( 0.1 )
+
     FOURTH_IR = ir_sensor.measure_ir()
     match current_step :
         case Step.start: 
@@ -69,6 +89,7 @@ while running:
 
         case Step.fourth_part_irsensor_post:  
             print( Step.fourth_part_irsensor_post )
+            
 
             if( FOURTH_IR == 1 ) :
                 #서버에서 적외선 센서 감지 여부 전송
@@ -79,7 +100,7 @@ while running:
 
         case Step.fourth_part_process_start:  #계산함수 시작조건 - 센서감지
             print( Step.fourth_part_process_start )
-            start_reply = server_comm.metalWiringStart() 
+            start_reply = server_comm.euvLithographyStart() 
             # 조도센서가 임무를 수행   
             # 답변 중 msg 변수에 "ok" 를 확인할 시
             if( start_reply == "ok"):
@@ -100,10 +121,11 @@ while running:
             #조도센서값을 판단
             light_value = light_sensor.measure_light()
             #조도센서 값을 서버에 전송
-            end_light = server_comm.metalWiringEnd(light_value)
+            end_light = server_comm.euvLithographyEnd(light_value)
             if(end_light == "fail"):
+                pass_or_fail2 = GuideMotorStep.reset
                 pass_or_fail1 = GuideMotorStep.fail
-                pass_or_fail2 = GuideMotorStep.reset  
+                  
             else:
                 if (end_light == "left"):
                     pass_or_fail2 = GuideMotorStep.badGrade
@@ -117,13 +139,15 @@ while running:
         case Step.move_servo:
             print(Step.move_servo)
             servo_motor_1.doGuideMotor(pass_or_fail1)
-            servo_motor_2.doGuideMotor(pass_or_fail2)  
+            servo_motor_2.doGuideMotor(pass_or_fail2) 
+            # server_comm.confirmationObject(4, FOURTH_IR,"FOURTH_IR") 
             current_step = Step.go_rail_next_1
 
         case Step.go_rail_next_1:
             print(Step.go_rail_next_1)
             dc_motor.doConveyor()  # 모터를 구동시킴
-            current_step = Step.stop_rail_1
+            if(FOURTH_IR == 0):
+                current_step = Step.stop_rail_1
 
         case Step.stop_rail_1:
             if( pass_or_fail1 == GuideMotorStep.fail ):
@@ -135,5 +159,5 @@ while running:
             current_step = Step.end_time
 
         case Step.end_time:
-            detect_reply = server_comm.confirmationObject(4, FOURTH_IR)
+            detect_reply = server_comm.confirmationObject(4, FOURTH_IR,"allProcessFinish")
             current_step = Step.start
