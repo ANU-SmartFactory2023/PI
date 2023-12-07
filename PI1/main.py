@@ -49,9 +49,9 @@ pass_or_fail = ''
 while running:
     print("running : " + str(running))  # 디버깅확인용
     time.sleep(0.1)
-    INPUT_IR_Sensor = First_ir_sensor.measure_ir()
-    IMAGE_IR_Sensor = Second_ir_sensor.measure_ir()
-    SONIC_IR_Sensor_No1 = Third_ir_sensor.measure_ir()
+    INPUT_IR_SENSOR = First_ir_sensor.measure_ir()
+    IMAGE_IR_SENSOR = Second_ir_sensor.measure_ir()
+    SONIC_IR_SENSOR_NO1 = Third_ir_sensor.measure_ir()
 
     match current_step:
         case Step.start:  # 초기 상태, 시스템 시작
@@ -63,9 +63,9 @@ while running:
         
         case Step.input_part_sensor_check:
             print(Step.input_part_sensor_check)
-            if INPUT_IR_Sensor:
+            if INPUT_IR_SENSOR:
                 # 1번핀의 감지상태
-                server_comm.confirmationObject( 1, INPUT_IR_Sensor )
+                server_comm.confirmationObject( 1, INPUT_IR_SENSOR )
                 current_step = Step.wait_server_state
             
         case Step.wait_server_state:  # 서버로부터 ok 받을 때까지 대기 (통신)
@@ -80,9 +80,9 @@ while running:
             result = dc_motor.doConveyor()
             current_step = Step.photo_part_detect_sensor_check
 
-        case Step.photo_part_detect_sensor_check:  # 포토센서 감지 상태 확인
+        case Step.photo_part_detect_sensor_check:  # 포토공정 적외선센서 감지 상태 확인
             print(Step.photo_part_detect_sensor_check)
-            if IMAGE_IR_Sensor:
+            if IMAGE_IR_SENSOR:
                 current_step = Step.stop_rail
 
         case Step.stop_rail:  # DC모터 정지
@@ -93,7 +93,7 @@ while running:
         case Step.photo_process:    # POST( 통신 )
             print(Step.photo_process)
             server_comm.photolithographyStart()    # 서버에게 이미지처리 시작하도록 알림
-            result = IMAGE_IR_Sensor  # 이미지 처리 값
+            result = IMAGE_IR_SENSOR  # 이미지 처리 값
             pass_or_fail = server_comm.photolithographyEnd(result)  # 서버에 값을 전달(result)
 
             current_step = Step.servo_motor_drive
@@ -106,7 +106,7 @@ while running:
                 motor_step = GuideMotorStep.good
 
             servo_motor.doGuideMotor(motor_step)
-            server_comm.confirmationObject( 1, IMAGE_IR_Sensor, "IMAGE_IR_Sensor_OFF" )
+            server_comm.confirmationObject( 1, IMAGE_IR_SENSOR, "IMAGE_IR_SENSOR" )
             current_step = Step.go_rail_next
 
         case Step.go_rail_next:  # DC모터 재구동, 다음 단계로 이동
@@ -124,8 +124,8 @@ while running:
 
         case Step.sonic_part_detect_sensor_check:  # 적외선 물체 감지
             print(Step.sonic_part_detect_sensor_check)
-            if SONIC_IR_Sensor_No1:
-                server_comm.confirmationObject( 2, SONIC_IR_Sensor_No1 )
+            if SONIC_IR_SENSOR_NO1:
+                server_comm.confirmationObject( 2, SONIC_IR_SENSOR_NO1 )
                 current_step = Step.slow_rail
 
         case Step.slow_rail:  # DC모터 천천히 구동
