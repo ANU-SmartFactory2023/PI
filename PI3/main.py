@@ -32,17 +32,17 @@ class Step( Enum ) :
 pass_or_fail = GuideMotorStep.stop
 
 SERVO_PIN_NO = 16
-SONIC_SECOND_IR_SENSOR_PIN_NO = 17
-RELAY_IR_SENSOR_PIN_NO  = 18
-LIGHT_IR_SENSOR_PIN_NO = 19
+SONIC_IR_SENSOR_PIN_NO2 = 17
+RELAY_IR_SENSOR_PIN  = 18
+LIGHT_IR_SENSOR_PIN = 19
     
 
 currnet_step = Step.start
 running = True
 
-sonic_ir_sensor_2 = InfraredSensor( SONIC_SECOND_IR_SENSOR_PIN_NO )
-relay_ir_sensor_3 = InfraredSensor( RELAY_IR_SENSOR_PIN_NO )
-light_ir_sensor_4 = InfraredSensor( LIGHT_IR_SENSOR_PIN_NO )
+sonic_ir_sensor_no2 = InfraredSensor( SONIC_IR_SENSOR_PIN_NO2 )
+relay_ir_sensor = InfraredSensor( RELAY_IR_SENSOR_PIN )
+light_ir_sensor = InfraredSensor( LIGHT_IR_SENSOR_PIN )
 relay_module = RelayModule( 12 )
 servercomm = ServerComm()
 dc_motor = Motor().dc_init( 1, 2, 3 ) 
@@ -53,9 +53,9 @@ servo_motor = Motor().servo_init( SERVO_PIN_NO )
 while running:
     print( "running : " + str( running ) )# 디버깅확인용
     time.sleep( 0.1 )
-    SONIC_IR = sonic_ir_sensor_2.measure_ir()
-    RELAY_IR = relay_ir_sensor_3.measure_ir()
-    LIGHT_IR = light_ir_sensor_4.measure_ir()
+    SONIC_IR_SENSOR_NO2 = sonic_ir_sensor_no2.measure_ir()
+    RELAY_IR_SENSOR = relay_ir_sensor.measure_ir()
+    LIGHT_IR_SENSOR = light_ir_sensor.measure_ir()
     match currnet_step :
         case Step.start: 
             print( Step.start )
@@ -67,14 +67,14 @@ while running:
         case Step.second_part_irsensor_check_on:
             print( Step.second_part_irsensor_check )
              # 1차 공정 두 번째 적외선 센서 값이 0이면
-            if( sonic_ir_sensor_2.get_ir_sensor( )==1 ):
+            if( sonic_ir_sensor_no2.get_ir_sensor( )==1 ):
                 current_step = Step.second_part_irsensor_check_off
         
         # 2차 공정 적외선센서 1 -> 0 확인
         case Step.second_part_irsensor_check_off:          
             print( Step.second_part_irsensor_check )
             # 2차 공정 두 번째 적외선 센서 값이 0이면
-            if( sonic_ir_sensor_2.get_ir_sensor( )==0 ):
+            if( sonic_ir_sensor_no2.get_ir_sensor( )==0 ):
                 
                 # GET 통신 요청해서 답변
                 if( servercomm.check_second_process()== True):
@@ -91,7 +91,7 @@ while running:
 
         case Step.third_part_irsensor_check:
             print( Step.third_part_irsensor_check )
-            if( relay_ir_sensor_3 == 1 ):
+            if( relay_ir_sensor == 1 ):
                 # 이온주입 공정 적외선 센서 값이 1인 상태
                 # 컨베이어 벨트 정지
                 currnet_step = Step.stop_rail 
@@ -109,7 +109,7 @@ while running:
         case Step.third_part_irsensor_post:
             print( Step.third_part_irsensor_post )
             # 서버에게 적외선 센서 감지 여부 전송
-            decect_reply = servercomm.confirmationObject(3, relay_ir_sensor_3)
+            decect_reply = servercomm.confirmationObject(3, RELAY_IR_SENSOR, "RELAY_IR_SENSOR")
 
             # 답변 중 msg 변수에 "ok" 를 확인할 시
             if( decect_reply == "ok"):
@@ -170,7 +170,7 @@ while running:
             print( Step.final_stop_rail)
             # 4차 공정 적외선 센서 값으로 컨베이어벨트 정지 타이밍
             if(pass_or_fail == "good"):
-                if(LIGHT_IR_SENSOR_PIN_NO == 1):
+                if(LIGHT_IR_SENSOR == 1):
                     dc_motor.stopConveyor()
                     current_step = Step.start
             # 불량품 판정을 받았을 때 컨베이어벨트 정지 타이밍                                 

@@ -104,16 +104,53 @@ class ServerComm :
             return False
 
     # 1~4 차 제조 공정 전 적외선 센서를 사용해 제품 도착 여부 전송 (Post)
-    def confirmationObject( self, idx, on_off ) :
+    def confirmationObject( self, idx, on_off, processName ) :
         s = SensorModel()
         
+        if( processName == "INPUT_IR_SENSOR"):
+            s.sensorName = processName
+            # 서버에서 on과 off에 따라 로직이 달라짐
+            if(on_off == 1):
+                s.sensorState = "on"
+            else:
+                s.sensorState = "off"
+        elif(processName == "IMAGE_IR_SENSOR"):
+            s.sensorName = processName
+            # 서버에서 on과 off에 따라 로직이 달라짐
+            if(on_off == 1):
+                s.sensorState = "on"
+            else:
+                s.sensorState = "off"
+        elif(processName == "SONIC_IR_SENSOR_NO1"):
+            s.sensorName = processName
+            # 서버에서 on과 off에 따라 로직이 달라짐
+            if(on_off == 1):
+                s.sensorState = "on"
+            else:
+                s.sensorState = "off"
+        elif(processName == "SONIC_IR_SENSOR_NO2"):
+            s.sensorName = processName
+            # 서버에서 on과 off에 따라 로직이 달라짐
+            if(on_off == 1):
+                s.sensorState = "on"
+            else:
+                s.sensorState = "off"
+        elif(processName == "RELAY_IR_SENSOR"):
+            s.sensorName = processName
+            # 서버에서 on과 off에 따라 로직이 달라짐
+            if(on_off == 1):
+                s.sensorState = "on"
+            else:
+                s.sensorState = "off"
+        elif(processName == "LIGHT_IR_SENSOR"):
+            s.sensorName = processName
+            # 서버에서 on과 off에 따라 로직이 달라짐
+            if(on_off == 1):
+                s.sensorState = "on"
+            else:
+                s.sensorState = "off"
         # 적외선 센서는 한가지 종류만 있어 "detect" 로 고정
-        s.sensorName = "detect"
-        # 서버에서 on과 off에 따라 로직이 달라짐
-        if(on_off == 1):
-            s.sensorState = "on"
-        else:
-            s.sensorState = "off"
+         
 
         res = self.sensorRequestPost( f'/pi/sensor/{idx}', s )
 
