@@ -27,12 +27,12 @@ running = True
 
 # 적외선 센서 핀 번호
 INPUT_IR_SENSOR_PIN = 17
-PHOTO_IR_SENSOR_PIN = 18
-SONICT_IR_SENSOR_PIN_NO1 = 19
+IMAGE_IR_SENSOR_PIN = 18
+SONIC_IR_SENSOR_PIN_NO1 = 19
 
 First_ir_sensor = InfraredSensor(INPUT_IR_SENSOR_PIN)
-Second_ir_sensor = InfraredSensor(PHOTO_IR_SENSOR_PIN)
-Third_ir_sensor = InfraredSensor(SONICT_IR_SENSOR_PIN_NO1)
+Second_ir_sensor = InfraredSensor(IMAGE_IR_SENSOR_PIN)
+Third_ir_sensor = InfraredSensor(SONIC_IR_SENSOR_PIN_NO1)
 
 server_comm = ServerComm()
 
@@ -106,13 +106,17 @@ while running:
                 motor_step = GuideMotorStep.good
 
             servo_motor.doGuideMotor(motor_step)
-            server_comm.confirmationObject( 1, IMAGE_IR_SENSOR, "IMAGE_IR_SENSOR" )
+            #아직 dc모터 구동 x 상황(적외선 센서 on) 이면 
+            #server_comm.confirmationObject( 1, IMAGE_IR_SENSOR, "IMAGE_IR_SENSOR" )
             current_step = Step.go_rail_next
 
         case Step.go_rail_next:  # DC모터 재구동, 다음 단계로 이동
             print(Step.go_rail)                
             result = dc_motor.doConveyor()
-            current_step = Step.process_check
+            # 컨베이어 움직여야 적외선 센서가 0이 되고 off를 서버로 보낼 수 있다.
+            if(IMAGE_IR_SENSOR == 0):
+                server_comm.confirmationObject( 1, IMAGE_IR_SENSOR, "IMAGE_IR_SENSOR" )
+                current_step = Step.process_check
             
         case Step.process_check:
             if pass_or_fail == 'fail':  # 불량이므로 5초 대기
@@ -125,8 +129,9 @@ while running:
         case Step.sonic_part_detect_sensor_check:  # 적외선 물체 감지
             print(Step.sonic_part_detect_sensor_check)
             if SONIC_IR_SENSOR_NO1:
-                server_comm.confirmationObject( 2, SONIC_IR_SENSOR_NO1 )
-                current_step = Step.slow_rail
+        
+                if( SONIC_IR_SENSOR_NO1 == 1 ):
+                    current_step = Step.slow_rail
 
         case Step.slow_rail:  # DC모터 천천히 구동
             print(Step.slow_rail)
