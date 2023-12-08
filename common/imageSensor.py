@@ -9,7 +9,10 @@ class ImageCV:
         self.cap.release()
         cv2.destroyAllWindows()
 
-    def count_white_pixels(self, image):
+    def count_white_pixels(self):
+
+        image = self.cap.read()[1]
+
         # 이미지를 흑백으로 변환
         gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
