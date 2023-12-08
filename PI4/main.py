@@ -1,9 +1,9 @@
 import RPi.GPIO as GPIO
 from enum import Enum
+import sys
 import os
 import signal
-from time import sleep
-import sys
+import time  # 이 부분이 코드 상단에 포함되어 있는지 확인import sys
 import random
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from common.motor import Motor, GuideMotorStep
@@ -26,10 +26,10 @@ pass_or_fail1 = ''
 pass_or_fail2 = ''
 
 # GPIO 핀 번호 설정
-LIGHT_SENSOR_PIN = 16
-LIGHT_IR_SENSOR_PIN = 7
-SERVO_PIN_1 = 17
-SERVO_PIN_2 = 18
+LIGHT_IR_SENSOR_PIN = 23
+LIGHT_SENSOR_PIN = 24
+SERVO_PIN_1 = 16
+SERVO_PIN_2 = 25
 LED_PIN = 21
 
 # GPIO 초기화
@@ -56,11 +56,11 @@ light_sensor = LightSensor(LIGHT_SENSOR_PIN)
 server_comm = ServerComm()  # 서버참조
 servo_motor_1 = Motor().servo_init(SERVO_PIN_1)  # 주파수 50Hz
 servo_motor_2 = Motor().servo_init(SERVO_PIN_2)
-dc_motor = Motor().dc_init(1, 2, 3)  # DC모터
+dc_motor = Motor().dc_init(17, 27, 22)  # DC모터
 
 while running:
     print("running : " + str(running))  # 디버깅확인용
-    sleep(0.1)
+    time.sleep(5)  # time 모듈을 사용하도록 수정
     LIGHT_SENSOR_PIN = light_sensor.measure_light()
     LIGHT_IR_SENSOR = ir_sensor.measure_ir()
 
@@ -78,7 +78,7 @@ while running:
 
                 if LIGHT_IR_SENSOR == 0:
                     # 서버에서 적외선 센서 감지 여부 전송
-                    detect_reply = server_comm.confirmationObject(4, LIGHT_IR_SENSOR)
+                    detect_reply = server_comm.confirmationObject(4, LIGHT_IR_SENSOR, "LIGHT_IR_SENSOR")
                     # 답변 중 msg 변수에 "ok" 를 확인할 시
                     if detect_reply == "ok":
                         current_step = Step.fourth_part_process_start
@@ -92,17 +92,21 @@ while running:
                     current_step = Step.fourth_part_process_sleep
                 elif start_reply == "fail":
                     current_step = Step.start
-
+                time.sleep(5)  # time 모듈을 사용하도록 수정
             case Step.fourth_part_process_sleep:
                 # 랜덤값 변수 대입 후 딜레이 (제조 시간 구현)
                 print(Step.fourth_part_process_sleep)
                 random_time = random.randint(4, 8)
-                sleep(random_time)
+                time.sleep(random_time)
                 # 딜레이(제조)가 다 끝나면
                 current_step = Step.fourth_part_sensor_measure_and_endpost
+                
 
             case Step.fourth_part_sensor_measure_and_endpost:
                 print(Step.fourth_part_sensor_measure_and_endpost)
+                # LED 불켬 코드 추가
+
+
                 # 조도센서값을 판단
                 light_value = light_sensor.measure_light()
                 # 조도센서 값을 서버에 전송
@@ -118,8 +122,10 @@ while running:
                     elif end_light == "right":
                         pass_or_fail2 = GuideMotorStep.goodGrade
                         pass_or_fail1 = GuideMotorStep.good
+                # LED OFF
 
                 current_step = Step.move_servo
+                time.sleep(5)  # time 모듈을 사용하도록 수정
 
             case Step.move_servo:
                 print(Step.move_servo)
@@ -127,19 +133,20 @@ while running:
                 servo_motor_2.doGuideMotor(pass_or_fail2)
 
                 current_step = Step.go_rail_next_1
+                time.sleep(5)  # time 모듈을 사용하도록 수정
 
             case Step.go_rail_next_1:
                 print(Step.go_rail_next_1)
                 dc_motor.doConveyor()  # 모터를 구동시킴
-                if LIGHT_IR_SENSOR == 0:
+                if LIGHT_IR_SENSOR == 1:
                     server_comm.confirmationObject(4, LIGHT_IR_SENSOR, "LIGHT_IR_SENSOR")
                     current_step = Step.stop_rail_1
 
             case Step.stop_rail_1:
                 if pass_or_fail1 == GuideMotorStep.fail:
-                    sleep(5)  # 5초 동안 대기
+                    time.sleep(5)  # time 모듈을 사용하도록 수정  # 5초 동안 대기
                 else:
-                    sleep(8)
+                    time.sleep(5)  # time 모듈을 사용하도록 수정
 
                 dc_motor.stopConveyor()  # 모터를 정지시킴
                 current_step = Step.end_time
