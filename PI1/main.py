@@ -7,6 +7,7 @@ from common.motor import Motor, GuideMotorStep
 from common.irSensor import InfraredSensor
 from common.server_communication import ServerComm
 from common.models import ProcessModel
+from common.imageSensor import ImageCV
 
 class Step(Enum):
     start = 0
