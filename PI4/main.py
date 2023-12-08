@@ -149,4 +149,4 @@ while running:
                 current_step = Step.start
 
     except Exception as e:
-        print(f"서버 통신 중 예외 발생: {e}")
+        print(f"Exception occurred during server communication: {e}")
