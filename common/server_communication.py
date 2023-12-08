@@ -15,7 +15,7 @@ class ServerComm :
     
     #__init__ 설정 메서드에 서버 ip주소 및 포트번호 설정
     def __init__( self ) :
-        self.conn = http.client.HTTPConnection( '192.168.41.238', 5000 ) # 서버 ip, 포트;
+        self.conn = http.client.HTTPConnection( '192.168.1.10', 5000 ) # 서버 ip, 포트;
         self.conn.timeout = 3
 
     # HTTP 통신 Sensor Post 정의
@@ -85,7 +85,7 @@ class ServerComm :
     
     # 공정 시작 전 제품 도착 여부 전송 (Get)
     def ready(self) :
-        json_object = self.requestGet( '/pi/sensor/0' )
+        json_object = self.requestGet( '/pi/start' )
 
         msg = json_object[ 'msg' ]
         if msg == 'ok':
@@ -107,45 +107,46 @@ class ServerComm :
     def confirmationObject( self, idx, on_off, processName ) :
         s = SensorModel()
         
+        # 여기 적외선센서 감지가 0 물체 없음이 1값이어서 on_off 기준 변경
         if( processName == "INPUT_IR_SENSOR"):
             s.sensorName = processName
             # 서버에서 on과 off에 따라 로직이 달라짐
-            if(on_off == 1):
+            if(on_off == 0):
                 s.sensorState = "on"
             else:
                 s.sensorState = "off"
         elif(processName == "IMAGE_IR_SENSOR"):
             s.sensorName = processName
             # 서버에서 on과 off에 따라 로직이 달라짐
-            if(on_off == 1):
+            if(on_off == 0):
                 s.sensorState = "on"
             else:
                 s.sensorState = "off"
         elif(processName == "SONIC_IR_SENSOR_NO1"):
             s.sensorName = processName
             # 서버에서 on과 off에 따라 로직이 달라짐
-            if(on_off == 1):
+            if(on_off == 0):
                 s.sensorState = "on"
             else:
                 s.sensorState = "off"
         elif(processName == "SONIC_IR_SENSOR_NO2"):
             s.sensorName = processName
             # 서버에서 on과 off에 따라 로직이 달라짐
-            if(on_off == 1):
+            if(on_off == 0):
                 s.sensorState = "on"
             else:
                 s.sensorState = "off"
         elif(processName == "RELAY_IR_SENSOR"):
             s.sensorName = processName
             # 서버에서 on과 off에 따라 로직이 달라짐
-            if(on_off == 1):
+            if(on_off == 0):
                 s.sensorState = "on"
             else:
                 s.sensorState = "off"
         elif(processName == "LIGHT_IR_SENSOR"):
             s.sensorName = processName
             # 서버에서 on과 off에 따라 로직이 달라짐
-            if(on_off == 1):
+            if(on_off == 0):
                 s.sensorState = "on"
             else:
                 s.sensorState = "off"
