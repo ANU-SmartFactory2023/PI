@@ -76,7 +76,7 @@ while running:
             case Step.fourth_part_irsensor_post:
                 print(Step.fourth_part_irsensor_post)
 
-                if LIGHT_IR_SENSOR == 1:
+                if LIGHT_IR_SENSOR == 0:
                     # 서버에서 적외선 센서 감지 여부 전송
                     detect_reply = server_comm.confirmationObject(4, LIGHT_IR_SENSOR)
                     # 답변 중 msg 변수에 "ok" 를 확인할 시
