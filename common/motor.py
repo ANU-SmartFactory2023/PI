@@ -37,7 +37,8 @@ class Motor:
         GPIO.setup(self.dc_input1_pin, GPIO.OUT)
         GPIO.setup(self.dc_input2_pin, GPIO.OUT)
 
-        self.pwm_dc = GPIO.PWM(self.dc_enable_pin, 100)  # 주파수 1000Hz로 PWM 설정
+        # 모터 주기는 100까지 설정 가능함
+        self.pwm_dc = GPIO.PWM(self.dc_enable_pin, 100)  # 주파수 100Hz로 PWM 설정
         self.pwm_dc.start(0)  # 초기 듀티 사이클은 0으로 설정
 
         return self
@@ -65,15 +66,15 @@ class Motor:
 
     def doConveyor(self):
         # 속도 설정
-        speed = 100
+        speed = 10
 
         # 밑에 주석이 뭐지?
         # duty_cycle = speed * 1.1 + 10
         self.pwm_dc.ChangeDutyCycle(speed)
-
         # 정방향 회전
         GPIO.output(self.dc_input1_pin, GPIO.HIGH)
         GPIO.output(self.dc_input2_pin, GPIO.LOW)
+
 
     def slowConveyor(self):
         GPIO.output(self.dc_input1_pin, GPIO.HIGH)

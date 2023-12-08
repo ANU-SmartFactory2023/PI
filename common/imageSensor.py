@@ -9,6 +9,7 @@ class ImageCV:
         self.cap.release()
         cv2.destroyAllWindows()
 
+    # 매개변수 image를 삭제하고 count_white_pixels 함수에 image 변수 집어넣음
     def count_white_pixels(self):
 
         image = self.cap.read()[1]
