@@ -35,6 +35,7 @@ min = 2
 max = 7
 measure = Measure( min, max )
 
+
 # 핀번호 지정
 # DC모터 핀
 DC_enable_pin = 1
