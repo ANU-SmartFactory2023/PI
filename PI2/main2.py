@@ -4,12 +4,14 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 import time
 
 
+
 # 모듈 또는 파일 불러오기
 from enum import Enum
 from common.server_communication import ServerComm
 from common.irSensor import InfraredSensor
 from common.ultrasonicSensor import UltrasonicSensor
 from common.motor import Motor, GuideMotorStep
+from measure import Measure
 
 
 class Step( Enum ) :    #각 스텝별 이름, 동사형으로 지을것, 무엇을 하는 스텝인지 알 수 있는 네이밍
@@ -29,11 +31,9 @@ running = True
 pass_or_fail = ''   #서버에서 주는 담아주는 값이 string 형태
 
 # 값계산 함수 기본변수
-step = 0
-count = 0
-measure = Measure( min, max )
 min = 2
 max = 7
+measure = Measure( min, max )
 
 # 핀번호 지정
 # DC모터 핀
@@ -88,11 +88,8 @@ while running:
         case Step.measure_start:
             print( Step.measure_start )
             value = sonic_module.measure_distance ()  # 초음파센서값
-            measure.add( value ) # measure에 값 삽입 
-            if count > 100:
-                step += 1
-            else:
-                count += 1
+            measure.add( value ) # measure에 값 삽입
+           
             if( SONIC_IR_SENSOR_NO1 == 0):     #서버에 부하가 생기면 스텝으로 따로 빼야함 
                 servercomm.confirmationObject( 2, SONIC_IR_SENSOR_NO1,'SONIC_IR_SENSOR_NO1' )    
 
