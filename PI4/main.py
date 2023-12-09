@@ -105,8 +105,7 @@ while running:
             case Step.fourth_part_sensor_measure_and_endpost:
                 print(Step.fourth_part_sensor_measure_and_endpost)
                 # LED 불켬 코드 추가
-
-
+                GPIO.output(LED_PIN, GPIO.HIGH)
                 # 조도센서값을 판단
                 light_value = light_sensor.measure_light()
                 # 조도센서 값을 서버에 전송
@@ -114,7 +113,6 @@ while running:
                 if end_light == "fail":
                     pass_or_fail2 = GuideMotorStep.reset
                     pass_or_fail1 = GuideMotorStep.fail
-
                 else:
                     if end_light == "left":
                         pass_or_fail2 = GuideMotorStep.badGrade
@@ -123,7 +121,7 @@ while running:
                         pass_or_fail2 = GuideMotorStep.goodGrade
                         pass_or_fail1 = GuideMotorStep.good
                 # LED OFF
-
+                GPIO.output(LED_PIN, GPIO.LOW)
                 current_step = Step.move_servo
                 time.sleep(5)  # time 모듈을 사용하도록 수정
 
