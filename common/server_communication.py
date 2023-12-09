@@ -40,6 +40,7 @@ class ServerComm :
     def ProcessRequestPost( self, url, p:ProcessModel ) :
         result = ""
         try:
+            p.processValue = round( p.processValue,2)
             # p 클래스 변수들을 딕셔너리 형태로 변환 후 전송
             self.conn.request( 'POST', url, json.dumps( p.__dict__ ), self.headers )
             # getresponse()를 호출하면 http.client.HTTPResponse 객체 반환
@@ -51,6 +52,8 @@ class ServerComm :
 
         # json.loads 함수를 사용하여 이를 파이썬 객체로 변환한다.
         json_object = json.loads( result )  
+
+        print(json_object)
         
         # json 안 답변 분리 후 변수 저장 가능
         msg = json_object[ 'msg' ] 
