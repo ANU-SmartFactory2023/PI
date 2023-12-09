@@ -40,6 +40,7 @@ class ServerComm :
     def ProcessRequestPost( self, url, p:ProcessModel ) :
         result = ""
         try:
+            p.processValue = round( p.processValue,2)
             # p 클래스 변수들을 딕셔너리 형태로 변환 후 전송
             self.conn.request( 'POST', url, json.dumps( p.__dict__ ), self.headers )
             # getresponse()를 호출하면 http.client.HTTPResponse 객체 반환
