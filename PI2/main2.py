@@ -23,10 +23,17 @@ class Step( Enum ) :    #각 스텝별 이름, 동사형으로 지을것, 무엇
     process_check = 750
     go_rail_next = 800
 
-#기본설정
+# 기본설정
 currnet_step = Step.start   
 running = True  
 pass_or_fail = ''   #서버에서 주는 담아주는 값이 string 형태
+
+# 값계산 함수 기본변수
+step = 0
+count = 0
+measure = Measure( min, max )
+min = 2
+max = 7
 
 # 핀번호 지정
 # DC모터 핀
@@ -36,18 +43,18 @@ DC_input2_pin = 3
 # 서보모터 핀
 SERVO_PIN = 16  
 # 적외선 핀
-SONIC_ir_SENSOR_PIN_NO1 = 19
-SONIC_ir_SENSOR_PIN_NO2 = 20
-RELAY_ir_SENSOR_PIN = 21
+SONIC_IR_SENSOR_PIN_NO1 = 19
+SONIC_IR_SENSOR_PIN_NO2 = 20
+RELAY_IR_SENSOR_PIN = 21
 # 소닉센서 핀
 UltraSonic_trig_pin_NO = 13
 UltraSonic_echo_pin_NO = 12
 
 
 # 함수
-sonic_ir_sensor_1 = InfraredSensor( SONIC_ir_SENSOR_PIN_NO1 )
-sonic_ir_sensor_2 = InfraredSensor( SONIC_ir_SENSOR_PIN_NO2 )
-RELAY_ir_sensor = InfraredSensor( SONIC_ir_SENSOR_PIN_NO2 )
+sonic_ir_sensor_1 = InfraredSensor( SONIC_IR_SENSOR_PIN_NO1 )
+sonic_ir_sensor_2 = InfraredSensor( SONIC_IR_SENSOR_PIN_NO2 )
+relay_ir_sensor = InfraredSensor( SONIC_IR_SENSOR_PIN_NO2 )
 sonic_module = UltrasonicSensor( UltraSonic_trig_pin_NO, UltraSonic_echo_pin_NO, ) #소닉센서핀
 servercomm = ServerComm()
 dc_motor = Motor().dc_init( DC_enable_pin, DC_input1_pin, DC_input2_pin  ) 
@@ -58,9 +65,9 @@ servo_motor = Motor().servo_init( SERVO_PIN )
 while running:
     print( "running : " + str( running ) )# 디버깅확인용
     time.sleep( 0.1 )
-    SONIC_IR_NO1 = sonic_ir_sensor_1.measure_ir()
-    SONIC_IR_NO2 = sonic_ir_sensor_2.measure_ir()
-    RELAY_IR = RELAY_ir_sensor.measure_ir()
+    SONIC_IR_SENSOR_NO1 = sonic_ir_sensor_1.measure_ir()
+    SONIC_IR_SENSOR_NO2 = sonic_ir_sensor_2.measure_ir()
+    RELAY_IR_SENSOR = relay_ir_sensor.measure_ir()
     match currnet_step :
 
         case Step.start: 
@@ -71,10 +78,10 @@ while running:
 
         case Step.sonic_part_sensor_check:  #1번 초음파 센서에 감지
             print( Step.sonic_part_sensor_check )
-            if( SONIC_IR_NO1 == 1):
+            if( SONIC_IR_SENSOR_NO1 == 1):
                 # 감지상태
                 # 서버에게 센서 감지상태를 포스트로 전달한다.
-                servercomm.confirmationObject( 2, SONIC_IR_NO1 )
+                servercomm.confirmationObject( 2, SONIC_IR_SENSOR_NO1,'SONIC_IR_SENSOR_NO1' )
                 servercomm.etchingStart( True )
                 currnet_step = Step.measure_start
 
@@ -82,11 +89,15 @@ while running:
             print( Step.measure_start )
             value = sonic_module.measure_distance ()  # 초음파센서값
             measure.add( value ) # measure에 값 삽입 
-            if( SONIC_IR_NO1 == 0):     #서버에 부하가 생기면 스텝으로 따로 빼야함 
-                servercomm.confirmationObject( 2, SONIC_IR_NO1 )    
+            if count > 100:
+                step += 1
+            else:
+                count += 1
+            if( SONIC_IR_SENSOR_NO1 == 0):     #서버에 부하가 생기면 스텝으로 따로 빼야함 
+                servercomm.confirmationObject( 2, SONIC_IR_SENSOR_NO1,'SONIC_IR_SENSOR_NO1' )    
 
-            if(SONIC_IR_NO2 ): #2번 적외선센서 도달                
-                servercomm.confirmationObject( 3 , SONIC_IR_NO2 )
+            if(SONIC_IR_SENSOR_NO2 == 1 ): #2번 적외선센서 도달                
+                servercomm.confirmationObject( 2 , SONIC_IR_SENSOR_NO2,'SONIC_IR_SENSOR_NO2' )
                 currnet_step = Step.stop_rail
 
         case Step.stop_rail:
@@ -95,7 +106,7 @@ while running:
             currnet_step = Step.calculated_values_send
 
         case Step.calculated_values_send:
-            resutl = measure.clac()     # 값계산
+            resutl = measure.getAverage()     # 값계산
             pass_or_fail = servercomm.etchingEnd( result )  #서버에 값송신
             currnet_step = Step.servo_motor_drive
                 
@@ -117,11 +128,13 @@ while running:
                 dc_motor.stopConveyor()     
                 currnet_step = Step.start
             else :
+                if(SONIC_IR_SENSOR_NO2 == 0 ): #2번 적외선센서 off                
+                    servercomm.confirmationObject( 2 , SONIC_IR_SENSOR_NO2,'SONIC_IR_SENSOR_NO2' )
                 currnet_step = Step.go_rail_next
-            
+        
         case Step.go_rail_next:
             print( Step.go_rail_next )
-            if( RELAY_IR == 1):
+            if( RELAY_IR_SENSOR == 1):
                 dc_motor.stopConveyor()         
                 currnet_step = Step.start
 
