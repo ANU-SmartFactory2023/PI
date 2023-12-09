@@ -15,7 +15,7 @@ class ServerComm :
     
     #__init__ 설정 메서드에 서버 ip주소 및 포트번호 설정
     def __init__( self ) :
-        self.conn = http.client.HTTPConnection( '192.168.41.238', 5000 ) # 서버 ip, 포트
+        self.conn = http.client.HTTPConnection( '192.168.1.10', 5000 ) # 서버 ip, 포트;
         self.conn.timeout = 3
 
     # HTTP 통신 Sensor Post 정의
@@ -85,7 +85,7 @@ class ServerComm :
     
     # 공정 시작 전 제품 도착 여부 전송 (Get)
     def ready(self) :
-        json_object = self.requestGet( '/pi/sensor/0' )
+        json_object = self.requestGet( '/pi/start' )
 
         msg = json_object[ 'msg' ]
         if msg == 'ok':
@@ -104,16 +104,60 @@ class ServerComm :
             return False
 
     # 1~4 차 제조 공정 전 적외선 센서를 사용해 제품 도착 여부 전송 (Post)
-    def confirmationObject( self, idx, on_off ) :
+    def confirmationObject( self, idx, on_off, processName ) :
         s = SensorModel()
         
+        # 여기 적외선센서 감지가 0 물체 없음이 1값이어서 on_off 기준 변경
+        if( processName == "INPUT_IR_SENSOR"):
+            s.sensorName = processName
+            # 서버에서 on과 off에 따라 로직이 달라짐
+            if(on_off == 0):
+                s.sensorState = "on"
+            else:
+                s.sensorState = "off"
+        elif(processName == "IMAGE_IR_SENSOR"):
+            s.sensorName = processName
+            # 서버에서 on과 off에 따라 로직이 달라짐
+            if(on_off == 0):
+                s.sensorState = "on"
+            else:
+                s.sensorState = "off"
+        elif(processName == "SONIC_IR_SENSOR_NO1"):
+            s.sensorName = processName
+            # 서버에서 on과 off에 따라 로직이 달라짐
+            if(on_off == 0):
+                s.sensorState = "on"
+            else:
+                s.sensorState = "off"
+        elif(processName == "SONIC_IR_SENSOR_NO2"):
+            s.sensorName = processName
+            # 서버에서 on과 off에 따라 로직이 달라짐
+            if(on_off == 0):
+                s.sensorState = "on"
+            else:
+                s.sensorState = "off"
+        elif(processName == "RELAY_IR_SENSOR"):
+            s.sensorName = processName
+            # 서버에서 on과 off에 따라 로직이 달라짐
+            if(on_off == 0):
+                s.sensorState = "on"
+            else:
+                s.sensorState = "off"
+        elif(processName == "LIGHT_IR_SENSOR"):
+            s.sensorName = processName
+            # 서버에서 on과 off에 따라 로직이 달라짐
+            if(on_off == 0):
+                s.sensorState = "on"
+            else:
+                s.sensorState = "off"
+
+        elif(processName == "END_TIME"):
+            s.sensorName = processName
+            # 서버에서 on과 off에 따라 로직이 달라짐
+            s.sensorState = "finalEnd"
+            
         # 적외선 센서는 한가지 종류만 있어 "detect" 로 고정
-        s.sensorName = "detect"
-        # 서버에서 on과 off에 따라 로직이 달라짐
-        if(on_off == 1):
-            s.sensorState = "on"
-        else:
-            s.sensorState = "off"
+         
 
         res = self.sensorRequestPost( f'/pi/sensor/{idx}', s )
 
@@ -123,11 +167,11 @@ class ServerComm :
     # 공정마다 매개변수를 통신 클래스에서 먼저 정의하는 방법
 
     # 포토 공정 시작 시간 전송
-    def photoStart( self ):
-        return self.__checkProcess( 1, "start", "photo", "0")
+    def photolithographyStart( self ):
+        return self.__checkProcess( 1, "start", "photolithography", "0")
     # 포토 공정 종료 타이밍과 센서값 전송
-    def photoEnd( self, processValue):
-        return self.__checkProcess( 1, "end", "photo", processValue)
+    def photolithographyEnd( self, processValue):
+        return self.__checkProcess( 1, "end", "photolithography", processValue)
     
     # 식각 공정 시작
     def etchingStart( self ):
@@ -136,19 +180,19 @@ class ServerComm :
     def etchingEnd( self, processValue):
         return self.__checkProcess( 2, "end", "etching", processValue)
 
-    # 이온 주입 공정 시작 
-    def ionlmplantationStart( self ):
-        return self.__checkProcess( 3, "start", "ionlmplantation", "0")
-    # 이온 주입 공정 종료
-    def ionlmplantationEnd( self, processValue):
-        return self.__checkProcess( 3, "end", "ionlmplantation", processValue)
+    # EDS 공정 시작 
+    def edsStart( self ):
+        return self.__checkProcess( 3, "start", "eds", "0")
+    # EDS 공정 종료
+    def edsEnd( self, processValue):
+        return self.__checkProcess( 3, "end", "eds", processValue)
 
-    # 후공정 시작 
-    def metalWiringStart( self ):
-        return self.__checkProcess( 4, "start", "metalWiring", "0")
+    # euv 인쇄 과정 시작 
+    def euvLithographyStart( self ):
+        return self.__checkProcess( 4, "start", "euvLithography", "0")
     # 후공정 종료
-    def metalWiringEnd( self, processValue):
-        return self.__checkProcess( 4, "end", "metalWiring", processValue) 
+    def euvLithographyEnd( self, processValue):
+        return self.__checkProcess( 4, "end", "euvLithography", processValue) 
     
 
     # 1~4 차 제조 공정 후 불량품 구분을 위한 센서값 전송 (Post)
