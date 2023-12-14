@@ -35,7 +35,7 @@ class Motor:
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.dc_enable_pin, GPIO.OUT)
         GPIO.setup(self.dc_input1_pin, GPIO.OUT)
-        #GPIO.setup(self.dc_input2_pin, GPIO.OUT)
+        GPIO.setup(self.dc_input2_pin, GPIO.OUT)
 
         # 모터 주기는 100까지 설정 가능함
         self.pwm_dc = GPIO.PWM(self.dc_enable_pin, 100)  # 주파수 100Hz로 PWM 설정
@@ -80,7 +80,7 @@ class Motor:
     def slowConveyor(self):
         GPIO.output(self.dc_input1_pin, GPIO.LOW)
         GPIO.output(self.dc_input2_pin, GPIO.HIGH)
-        speed = 70     # 속도 설정
+        speed = 100    # 속도 설정
         #duration = 3    # 3초간 50으로 구동
         #self.doConveyor(speed)
         self.pwm_dc.ChangeDutyCycle(speed)
