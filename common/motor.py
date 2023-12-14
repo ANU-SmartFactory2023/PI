@@ -91,6 +91,7 @@ class Motor:
         # 정지
         GPIO.output(self.dc_input1_pin, GPIO.LOW)
         GPIO.output(self.dc_input2_pin, GPIO.LOW)
+        self.pwm_dc.stop()
 
     def cleanup(self):
         # 정리

@@ -12,6 +12,8 @@ from common.server_communication import ServerComm
 from common.models import ProcessModel
 from common.imageSensor import ImageCV
 
+resetFlag = 0
+
 class Step(Enum):
     start = 0
     input_part_sensor_check = 10
@@ -31,7 +33,7 @@ class Step(Enum):
     go_rail_next = 350
     process_check = 370
     sonic_part_detect_sensor_check = 400
-    slow_rail = 500
+    final_stop_rail = 500
 
 # ctrl + c 누르면 프로그램 정상 종료 ( gpio 초기화 등등ㅇ)
 def signal_handler(sig, frame):
@@ -69,18 +71,26 @@ servo_motor = Motor().servo_init(servo_pin)  # 모터 핀 번호
 
 pass_or_fail = ''
 
+dc_motor.stopConveyor()  # DC모터 정지
+
 while running:
     print("running : " + str(running))  # 디버깅확인용
+
+    if(resetFlag != 0):
+        dc_motor = Motor().dc_init(dc_enable_pin, dc_input1_pin, dc_input2_pin)
+        servo_motor = Motor().servo_init(servo_pin)  # 모터 핀 번호
+    
     time.sleep(0.1)
     INPUT_IR_SENSOR = First_ir_sensor.measure_ir()
     IMAGE_IR_SENSOR = Second_ir_sensor.measure_ir()
     SONIC_IR_SENSOR_NO1 = Third_ir_sensor.measure_ir()
+    print(INPUT_IR_SENSOR)
 
     match current_step:
         case Step.start:  # 초기 상태, 시스템 시작
             print(Step.start)
             servo_motor.doGuideMotor(GuideMotorStep.stop)  # 서보 정렬
-            dc_motor.stopConveyor()  # DC모터 정지
+            
             # 시작하기전에 검사할 것들 : 통신확인여부, 모터정렬, 센서 검수
             current_step = Step.input_part_sensor_check
         
@@ -163,6 +173,8 @@ while running:
             current_step = Step.servo_motor_drive
                 
         case Step.servo_motor_drive:  # p or f 따라 서보모터 제어
+            print( Step.photo_measure_and_endpost )
+
             motor_step = servo_motor.doGuideMotor(GuideMotorStep.stop)
             if (pass_or_fail == 'fail'):
                 motor_step = GuideMotorStep.fail
@@ -175,7 +187,7 @@ while running:
             current_step = Step.go_rail_next
 
         case Step.go_rail_next:  # DC모터 재구동, 다음 단계로 이동
-            print(Step.go_rail)                
+            print(Step.go_rail_next)                
             dc_motor.doConveyor()
             # 컨베이어 움직여야 적외선 센서가 1이 되고 off를 서버로 보낼 수 있다.
             if(IMAGE_IR_SENSOR == 1):
@@ -183,7 +195,12 @@ while running:
                 current_step = Step.process_check
             
         case Step.process_check:
-            if pass_or_fail == 'fail':  # 불량이므로 5초 대기
+            print(Step.process_check)                
+
+            ####################################################
+            if pass_or_fail == 'good':  # 불량이므로 5초 대기
+                #테스트 용도로 수정함 원래는 'fail'
+            ####################################################
                 time.sleep(5)
                 dc_motor.stopConveyor()
                 current_step = Step.start
@@ -192,12 +209,15 @@ while running:
 
         case Step.sonic_part_detect_sensor_check:  # 적외선 물체 감지
             print(Step.sonic_part_detect_sensor_check)
-            if SONIC_IR_SENSOR_NO1:
-        
-                if( SONIC_IR_SENSOR_NO1 == 0 ):
-                    current_step = Step.slow_rail
 
-        case Step.slow_rail:  # DC모터 천천히 구동
-            print(Step.slow_rail)
-            dc_motor.slowConveyor()
+            if( SONIC_IR_SENSOR_NO1 == 0 ):
+                    current_step = Step.final_stop_rail
+                    
+
+        case Step.final_stop_rail:  # DC모터 천천히 구동
+            print(Step.final_stop_rail)
+            dc_motor.stop_rail()
+            # time.sleep(1)
             current_step = Step.start
+            GPIO.cleanup()  # GPIO 정리
+            
