@@ -216,8 +216,8 @@ while running:
 
         case Step.final_stop_rail:  # DC모터 천천히 구동
             print(Step.final_stop_rail)
-            dc_motor.stop_rail()
-            # time.sleep(1)
+            dc_motor.stopConveyor()
+            
             current_step = Step.start
-            GPIO.cleanup()  # GPIO 정리
+            
             

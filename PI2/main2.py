@@ -82,8 +82,8 @@ while running:
     SONIC_IR_SENSOR_NO2 = sonic_ir_sensor_2.measure_ir()
     RELAY_IR_SENSOR = relay_ir_sensor.measure_ir()
 
-    print( SONIC_IR_SENSOR_NO1)
-    time.sleep(1)
+    print( SONIC_IR_SENSOR_NO2)
+    
 
 
     match currnet_step :
@@ -96,9 +96,11 @@ while running:
 
         case Step.sonic_part_sensor_check:  #1번 초음파 센서에 감지
             print( Step.sonic_part_sensor_check )
+            print( SONIC_IR_SENSOR_NO1)
             if( SONIC_IR_SENSOR_NO1 == 0):
-                time.sleep(5)
-                #dc_motor.slowConveyor()
+                time.sleep(1)
+
+                dc_motor.doConveyor()
                 # 감지상태
                 # 서버에게 센서 감지상태를 포스트로 전달한다.
                 servercomm.confirmationObject( 2, SONIC_IR_SENSOR_NO1,'SONIC_IR_SENSOR_NO1' )
@@ -113,13 +115,14 @@ while running:
             if(SONIC_IR_SENSOR_NO1 == 1):     #서버에 부하가 생기면 스텝으로 따로 빼야함 
                 servercomm.confirmationObject( 2, SONIC_IR_SENSOR_NO1,'SONIC_IR_SENSOR_NO1' )    
 
-            if(SONIC_IR_SENSOR_NO2 == 0 ): #2번 적외선센서 도달                
+            if(SONIC_IR_SENSOR_NO2 == 0 ): #2번 적외선센서 도달      
+                print("sonic 2 detect")          
                 servercomm.confirmationObject( 2 , SONIC_IR_SENSOR_NO2,'SONIC_IR_SENSOR_NO2' )
                 currnet_step = Step.stop_rail
 
         case Step.stop_rail:
             print( Step.stop_rail )
-            result = dc_motor.stopConveyor#DC모터 정지            
+            result = dc_motor.stopConveyor()#DC모터 정지            
             currnet_step = Step.calculated_values_send
 
         case Step.calculated_values_send:
