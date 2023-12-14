@@ -35,11 +35,11 @@ class Motor:
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.dc_enable_pin, GPIO.OUT)
         GPIO.setup(self.dc_input1_pin, GPIO.OUT)
-        GPIO.setup(self.dc_input2_pin, GPIO.OUT)
+        #GPIO.setup(self.dc_input2_pin, GPIO.OUT)
 
         # 모터 주기는 100까지 설정 가능함
         self.pwm_dc = GPIO.PWM(self.dc_enable_pin, 100)  # 주파수 100Hz로 PWM 설정
-        self.pwm_dc.start(0)  # 초기 듀티 사이클은 0으로 설정
+        
 
         return self
 
@@ -65,25 +65,27 @@ class Motor:
             self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(0))
 
     def doConveyor(self):
+        self.pwm_dc.start(0)  # 초기 듀티 사이클은 0으로 설정
         # 속도 설정
-        speed = 10
+        speed = 100
 
         # 밑에 주석이 뭐지?
         # duty_cycle = speed * 1.1 + 10
         self.pwm_dc.ChangeDutyCycle(speed)
         # 정방향 회전
-        GPIO.output(self.dc_input1_pin, GPIO.HIGH)
-        GPIO.output(self.dc_input2_pin, GPIO.LOW)
+        GPIO.output(self.dc_input1_pin, GPIO.LOW)
+        GPIO.output(self.dc_input2_pin, GPIO.HIGH)
 
 
     def slowConveyor(self):
-        GPIO.output(self.dc_input1_pin, GPIO.HIGH)
-        GPIO.output(self.dc_input2_pin, GPIO.LOW)
-        speed = 50      # 속도 설정
-        duration = 3    # 3초간 50으로 구동
-        self.doConveyor(speed)
-        sleep(duration)
-        self.stopConveyor()
+        GPIO.output(self.dc_input1_pin, GPIO.LOW)
+        GPIO.output(self.dc_input2_pin, GPIO.HIGH)
+        speed = 70     # 속도 설정
+        #duration = 3    # 3초간 50으로 구동
+        #self.doConveyor(speed)
+        self.pwm_dc.ChangeDutyCycle(speed)
+        #sleep(duration)
+        #self.stopConveyor()
 
     def stopConveyor(self):
         # 정지
