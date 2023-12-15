@@ -14,7 +14,7 @@ from common.ultrasonicSensor import UltrasonicSensor
 from measure import Measure
 
 
-resetFlag = 0
+
 
 class Step(Enum):
     start = 0
@@ -68,20 +68,20 @@ max = 8
 measure = Measure( min, max )
 
 # 적외선 센서 핀 번호
-INPUT_IR_SENSOR_PIN = 23
-IMAGE_IR_SENSOR_PIN = 24
-SONIC_IR_SENSOR_PIN_NO1 = 25
-SONIC_IR_SENSOR_PIN_NO2 = 26
-RELAY_IR_SENSOR_PIN = 27
+INPUT_IR_SENSOR_PIN = 24
+IMAGE_IR_SENSOR_PIN = 23
+SONIC_IR_SENSOR_PIN_NO1 = 18
+SONIC_IR_SENSOR_PIN_NO2 = 15
+RELAY_IR_SENSOR_PIN = 14
 # 소닉센서 핀
-UltraSonic_trig_pin_NO = 20
-UltraSonic_echo_pin_NO = 21
+UltraSonic_trig_pin_NO = 7
+UltraSonic_echo_pin_NO = 1
 # MOTOR 핀 번호
-dc_enable_pin = 17
+dc_enable_pin = 22
 dc_input1_pin = 27
-dc_input2_pin = 22
-servo_photo_pin = 16
-servo_sonic_pin = 16
+dc_input2_pin = 17
+servo_photo_pin = 20
+servo_sonic_pin = 21
 
 dc_motor = Motor().dc_init(dc_enable_pin, dc_input1_pin, dc_input2_pin)
 servo_photo_motor = Motor().servo_init(servo_photo_pin)  # 모터 핀 번호
@@ -108,11 +108,6 @@ dc_motor.stopConveyor()  # DC모터 정지
 while running:
     print("running : " + str(running))  # 디버깅확인용
 
-    if(resetFlag != 0):
-        dc_motor = Motor().dc_init(dc_enable_pin, dc_input1_pin, dc_input2_pin)
-        servo_photo_motor = Motor().servo_init(servo_photo_pin)  # 모터 핀 번호
-        servo_sonic_motor = Motor().servo_init(servo_sonic_pin)  # 모터 핀 번호
-
     
     time.sleep(0.1)
     INPUT_IR_SENSOR = Input_ir_sensor.measure_ir()
@@ -120,7 +115,6 @@ while running:
     SONIC_IR_SENSOR_NO1 = Sonic_ir_sensor1.measure_ir()
     SONIC_IR_SENSOR_NO2 = sonic_ir_sensor_2.measure_ir()
     RELAY_IR_SENSOR = relay_ir_sensor.measure_ir()
-    print(INPUT_IR_SENSOR)
 
     match current_step:
         case Step.start:  # 초기 상태, 시스템 시작
@@ -259,16 +253,17 @@ while running:
 ######################### 식각공정 ############################3
         case Step.sonic_part_sensor_check:  #1번 초음파 센서에 감지
             print( Step.sonic_part_sensor_check )
-            print( SONIC_IR_SENSOR_NO1)
+
             if( SONIC_IR_SENSOR_NO1 == 0):
                 time.sleep(1)
 
-                dc_motor.doConveyor()
+                dc_motor.slowConveyor()
                 # 감지상태
                 # 서버에게 센서 감지상태를 포스트로 전달한다.
                 server_comm.confirmationObject( 2, SONIC_IR_SENSOR_NO1,'SONIC_IR_SENSOR_NO1' )
                 server_comm.etchingStart()
-                currnet_step = Step.measure_start
+                current_step = Step.measure_start
+                
                 
 
         case Step.measure_start:
@@ -282,19 +277,19 @@ while running:
             if(SONIC_IR_SENSOR_NO2 == 0 ): #2번 적외선센서 도달      
                 print("sonic 2 detect")          
                 server_comm.confirmationObject( 2 , SONIC_IR_SENSOR_NO2,'SONIC_IR_SENSOR_NO2' )
-                currnet_step = Step.sonic_stop_rail
+                current_step = Step.sonic_stop_rail
 
         case Step.sonic_stop_rail:
             print( Step.sonic_stop_rail )
             result = dc_motor.stopConveyor()#DC모터 정지            
-            currnet_step = Step.calculated_values_send
+            current_step = Step.calculated_values_send
 
         case Step.calculated_values_send:
             print( Step.calculated_values_send )
 
             resutl = measure.getAverage()     # 값계산
             pass_or_fail = server_comm.etchingEnd( result )  #서버에 값송신
-            currnet_step = Step.sonic_servo_motor_drive
+            current_step = Step.sonic_servo_motor_drive
                 
         case Step.sonic_servo_motor_drive:
             print( Step.sonic_servo_motor_drive )       
@@ -305,7 +300,7 @@ while running:
                 motor_step = GuideMotorStep.good
 
             servo_sonic_motor.doGuideMotor( motor_step )    #위에 따라서 모터구동 
-            currnet_step = Step.sonic_process_check
+            current_step = Step.sonic_process_check
 
         case Step.sonic_process_check:    #불량여부에 따라서 프로세스 수정
             print( Step.sonic_process_check )
@@ -314,16 +309,14 @@ while running:
             if(pass_or_fail == 'fail'):
                 time.sleep(5)       
                 dc_motor.stopConveyor()     
-                currnet_step = Step.start
+                current_step = Step.start
             else :
                 if(SONIC_IR_SENSOR_NO2 == 1 ): #2번 적외선센서 off                
                     server_comm.confirmationObject( 2 , SONIC_IR_SENSOR_NO2,'SONIC_IR_SENSOR_NO2' )
-                currnet_step = Step.go_rail_relay
+                current_step = Step.go_rail_relay
         
         case Step.go_rail_relay:
             print( Step.go_rail_relay )
             if( RELAY_IR_SENSOR == 1):
                 dc_motor.stopConveyor()         
-                currnet_step = Step.start
-
-            
+                current_step = Step.start
