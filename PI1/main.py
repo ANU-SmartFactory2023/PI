@@ -211,13 +211,14 @@ while running:
             print(Step.sonic_part_detect_sensor_check)
 
             if( SONIC_IR_SENSOR_NO1 == 0 ):
-                    current_step = Step.final_stop_rail
+                # 들여쓰기 
+                current_step = Step.final_stop_rail
                     
 
         case Step.final_stop_rail:  # DC모터 천천히 구동
             print(Step.final_stop_rail)
             dc_motor.stopConveyor()
-            
+
             current_step = Step.start
-            
+
             
