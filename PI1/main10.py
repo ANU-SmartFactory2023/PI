@@ -60,7 +60,8 @@ GPIO.cleanup()  # GPIO 정리
 # 기본설정
 current_step = Step.start
 running = True
-pass_or_fail = ''   #서버에서 주는 담아주는 값이 string 형태
+pass_or_fail_photo = ''   #서버에서 주는 담아주는 값이 string 형태
+pass_or_fail_sonic = '' 
 
 # 값계산 함수 기본변수
 min = 3
@@ -204,7 +205,7 @@ while running:
             print( Step.photo_measure_and_endpost )
             
             white_pixel = image_value.count_white_pixels()  # 이미지 처리 값
-            pass_or_fail = server_comm.photolithographyEnd(white_pixel)  # 서버에 값을 전달(result)
+            pass_or_fail_photo = server_comm.photolithographyEnd(white_pixel)  # 서버에 값을 전달(result)
 
             current_step = Step.servo_motor_drive
                 
@@ -212,7 +213,7 @@ while running:
             print( Step.servo_motor_drive )
 
             motor_step = servo_photo_motor.doGuideMotor(GuideMotorStep.stop)
-            if (pass_or_fail == 'fail'):
+            if (pass_or_fail_photo == 'fail'):
                 motor_step = GuideMotorStep.fail
             else:
                 motor_step = GuideMotorStep.good
@@ -234,7 +235,7 @@ while running:
             print(Step.process_check)                
 
             ####################################################
-            if pass_or_fail == 'good':  # 불량이므로 5초 대기
+            if pass_or_fail_photo == 'good':  # 불량이므로 5초 대기
                 #테스트 용도로 수정함 원래는 'fail'
             ####################################################
                 time.sleep(5)
@@ -293,13 +294,13 @@ while running:
             print( Step.calculated_values_send )
 
             resutl = measure.getAverage()     # 값계산
-            pass_or_fail = server_comm.etchingEnd( result )  #서버에 값송신
+            pass_or_fail_sonic = server_comm.etchingEnd( result )  #서버에 값송신
             currnet_step = Step.sonic_servo_motor_drive
                 
         case Step.sonic_servo_motor_drive:
             print( Step.sonic_servo_motor_drive )       
             motor_step = GuideMotorStep.stop    #기본 stop
-            if( pass_or_fail == 'fail'):                 #서버에서 받은 불량기준
+            if( pass_or_fail_sonic == 'fail'):                 #서버에서 받은 불량기준
                 motor_step = GuideMotorStep.fail
             else :
                 motor_step = GuideMotorStep.good
@@ -311,7 +312,7 @@ while running:
             print( Step.sonic_process_check )
             dc_motor.doConveyor() #DC모터 구동 
 
-            if(pass_or_fail == 'fail'):
+            if(pass_or_fail_sonic == 'fail'):
                 time.sleep(5)       
                 dc_motor.stopConveyor()     
                 currnet_step = Step.start
