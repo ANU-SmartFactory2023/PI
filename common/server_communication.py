@@ -52,6 +52,8 @@ class ServerComm :
 
         # json.loads 함수를 사용하여 이를 파이썬 객체로 변환한다.
         json_object = json.loads( result )  
+
+        print(json_object)
         
         # json 안 답변 분리 후 변수 저장 가능
         msg = json_object[ 'msg' ] 

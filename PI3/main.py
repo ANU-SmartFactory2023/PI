@@ -46,6 +46,10 @@ GPIO.cleanup()  # GPIO 정리
 pass_or_fail = GuideMotorStep.stop
 
 SERVO_PIN_NO = 16
+RELAY_OUT_SERVO_PIN_NO = 20
+RELAY_IN_SERVO_PIN_NO = 26
+RELAY_OUPUT_PIN_NO = 5
+RELAY_INPUT_PIN_NO = 6
 SONIC_IR_SENSOR_PIN_NO2 = 23
 RELAY_IR_SENSOR_PIN  = 24
 LIGHT_IR_SENSOR_PIN = 25
@@ -57,7 +61,7 @@ running = True
 sonic_ir_sensor_no2 = InfraredSensor( SONIC_IR_SENSOR_PIN_NO2 )
 relay_ir_sensor = InfraredSensor( RELAY_IR_SENSOR_PIN )
 light_ir_sensor = InfraredSensor( LIGHT_IR_SENSOR_PIN )
-relay_module = RelayModule( 12 )
+relay_module = RelayModule( RELAY_OUPUT_PIN_NO, RELAY_INPUT_PIN_NO)
 servercomm = ServerComm()
 dc_motor = Motor().dc_init( 17, 27, 22 ) 
 servo_motor = Motor().servo_init( SERVO_PIN_NO )
@@ -166,16 +170,20 @@ while running:
             print( Step.third_part_sensor_measure_and_endpost )
             # 릴레이 모듈 값을 전도성 판단
             # 테스트로 아래 문장 주석 처리
-            # relay_value = relay_module.get_relay_sensor()
-            relay_value = 1
+            relay_value = relay_module.turn_on_relay()
+            print(relay_value)
+            #relay_value = 1
             # 릴레이 모듈 값을 서버에 전송
             end_reply = servercomm.edsEnd(relay_value)
+
+            print (end_reply)
 
             # 답변 따라 GuideMotorStep(good or fail) 클래스 Enum 설정
             if(end_reply == "pass"):
                 pass_or_fail = GuideMotorStep.good
             else:
                 pass_or_fail = GuideMotorStep.fail
+            
 
             current_step = Step.servo
             
