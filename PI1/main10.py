@@ -80,9 +80,9 @@ RELAY_IR_SENSOR_PIN = 14
 UltraSonic_trig_pin_NO = 7
 UltraSonic_echo_pin_NO = 1
 # MOTOR 핀 번호
-dc_enable_pin = 22
+dc_enable_pin = 17
 dc_input1_pin = 27
-dc_input2_pin = 17
+dc_input2_pin = 22
 servo_photo_pin = 21
 servo_sonic_pin = 20
 

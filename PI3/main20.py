@@ -284,7 +284,7 @@ while running:
                 detect_reply = servercomm.confirmationObject(4, LIGHT_IR_SENSOR, "LIGHT_IR_SENSOR")
                 # 답변 중 msg 변수에 "ok" 를 확인할 시
                 if detect_reply == "ok":
-                current_step = Step.fourth_part_process_start
+                    current_step = Step.fourth_part_process_start
 
         case Step.fourth_part_process_start:  # 계산함수 시작조건 - 센서감지
             print(Step.fourth_part_process_start)
@@ -346,7 +346,7 @@ while running:
                 current_step = Step.stop_rail_1
 
         case Step.stop_rail_1:
-            print(Step.go_rail_next_1)
+            print(Step.stop_rail_1)
             if pass_or_fail_euv == GuideMotorStep.fail:
                 time.sleep(5)  # time 모듈을 사용하도록 수정  # 5초 동안 대기
             else:
