@@ -64,22 +64,20 @@ SERVO_EUV_PIN = 20
 SERVO_GRADE_PIN = 16
 RELAY_IN_ARM_PIN_NO = 2
 RELAY_OUT_ARM_PIN_NO = 3
-RELAY_INPUT_PIN_NO = 12
-RELAY_OUTPUT_SERVO_PIN_NO = 1
 
 # DC모터 핀
-dc_enable_pin = 22
+dc_enable_pin = 17
 dc_input1_pin = 27
-dc_input2_pin = 17
+dc_input2_pin = 22
 
 # 적외선 센서 핀
 SONIC_IR_SENSOR_PIN_NO2 = 4
 RELAY_IR_SENSOR_PIN  = 15
 LIGHT_IR_SENSOR_PIN = 18
 
-# 릴레이 센서 핀
-RELAY_OUPUT_PIN_NO = 23
-RELAY_INPUT_PIN_NO = 24
+# # 릴레이 센서 핀
+RELAY_OUPUT_PIN_NO = 1
+RELAY_INPUT_PIN_NO = 12
 
 # 조도센서 LED핀
 LIGHT_SENSOR_PIN = 19
@@ -100,6 +98,8 @@ servo_eds_motor = Motor().servo_init( SERVO_EDS_PIN_NO )
 servo_euv_motor = Motor().servo_init(SERVO_EUV_PIN)  # 주파수 50Hz
 servo_grade_motor = Motor().servo_init(SERVO_GRADE_PIN)
 
+output_arm_servo = Motor().servo_init( RELAY_OUT_ARM_PIN_NO )
+input_arm_servo = Motor().servo_init( RELAY_IN_ARM_PIN_NO )
 
 
 while running:
@@ -116,6 +116,8 @@ while running:
             servo_eds_motor.doGuideMotor( GuideMotorStep.stop )
             servo_grade_motor.doGuideMotor(GuideMotorStep.stop)
             servo_euv_motor.doGuideMotor(GuideMotorStep.stop)
+            output_arm_servo.doGuideMotor(open)
+            input_arm_servo.doGuideMotor(open)
             #시작하기전에 검사할것들: 통신확인여부, 모터정렬, 센서 검수
             current_step = Step.second_part_irsensor_check_on
 
@@ -127,7 +129,7 @@ while running:
             # 1차 공정 두 번째 적외선 센서 값이 0이면
             if( SONIC_IR_SENSOR_NO2==0 ):
                 current_step = Step.second_part_irsensor_check_off
-                print("why")
+                
                 
             print(current_step)
                 
@@ -152,7 +154,11 @@ while running:
         case Step.first_go_rail:
             print( Step.first_go_rail )
 
-            dc_motor.doConveyor()         
+            dc_motor.doConveyor()     
+            ## 두 번째 컨베이어벨트 구동 때 로봇 암까지 같이 구동  
+            output_arm_servo.doGuideMotor(check)
+            input_arm_servo.doGuideMotor(check)
+            #########@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#################
             current_step = Step.third_part_irsensor_check
 
         case Step.third_part_irsensor_check:
@@ -227,9 +233,13 @@ while running:
             current_step = Step.servo
                 
         # doGuideMotor(motor_step) 함수를 호출하여 서보모터 작동
+        # 로봇팔도 진행 방향 오픈
+        ###################3@@@@@@@@@@@@@@@@@@@@@@@@@
         case Step.servo:
             print( Step.servo )
-                
+            
+            output_arm_servo.doGuideMotor(open)
+            input_arm_servo.doGuideMotor(open)
             servo_eds_motor.doGuideMotor(pass_or_fail_eds)
 
             current_step = Step.final_go_rail
@@ -251,7 +261,7 @@ while running:
             if(pass_or_fail_eds == GuideMotorStep.good):
                 if(LIGHT_IR_SENSOR == 0):
                     dc_motor.stopConveyor()
-                    current_step = Step.start
+                    current_step = Step.fourth_part_irsensor_post
             # 불량품 판정을 받았을 때 컨베이어벨트 정지 타이밍                                 
             else:
                 print(pass_or_fail_eds)

@@ -11,6 +11,8 @@ class GuideMotorStep(Enum):
     badGrade = 4
     goodGrade = 5
     re = 6
+    check = 7
+    open = 8
 
 class Motor:
     def servo_init(self, servo_pin):
@@ -67,20 +69,20 @@ class Motor:
     def doConveyor(self):
         self.pwm_dc.start(0)  # 초기 듀티 사이클은 0으로 설정
         # 속도 설정
-        speed = 100
+        speed = 80
 
         # 밑에 주석이 뭐지?
         # duty_cycle = speed * 1.1 + 10
         self.pwm_dc.ChangeDutyCycle(speed)
         # 정방향 회전
-        GPIO.output(self.dc_input1_pin, GPIO.LOW)
-        GPIO.output(self.dc_input2_pin, GPIO.HIGH)
+        GPIO.output(self.dc_input1_pin, GPIO.HIGH)
+        GPIO.output(self.dc_input2_pin, GPIO.LOW)
 
 
     def slowConveyor(self):
-        GPIO.output(self.dc_input1_pin, GPIO.LOW)
-        GPIO.output(self.dc_input2_pin, GPIO.HIGH)
-        speed = 100    # 속도 설정
+        GPIO.output(self.dc_input1_pin, GPIO.HIGH)
+        GPIO.output(self.dc_input2_pin, GPIO.LOW)
+        speed = 60    # 속도 설정
         #duration = 3    # 3초간 50으로 구동
         #self.doConveyor(speed)
         self.pwm_dc.ChangeDutyCycle(speed)
@@ -91,7 +93,7 @@ class Motor:
         # 정지
         GPIO.output(self.dc_input1_pin, GPIO.LOW)
         GPIO.output(self.dc_input2_pin, GPIO.LOW)
-        self.pwm_dc.stop()
+        #self.pwm_dc.stop()
 
     def cleanup(self):
         # 정리

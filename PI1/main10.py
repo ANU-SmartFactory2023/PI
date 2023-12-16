@@ -83,8 +83,8 @@ UltraSonic_echo_pin_NO = 1
 dc_enable_pin = 22
 dc_input1_pin = 27
 dc_input2_pin = 17
-servo_photo_pin = 20
-servo_sonic_pin = 21
+servo_photo_pin = 21
+servo_sonic_pin = 20
 
 dc_motor = Motor().dc_init(dc_enable_pin, dc_input1_pin, dc_input2_pin)
 servo_photo_motor = Motor().servo_init(servo_photo_pin)  # 모터 핀 번호
