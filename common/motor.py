@@ -11,12 +11,16 @@ class GuideMotorStep(Enum):
     badGrade = 4
     goodGrade = 5
     re = 6
-    check = 7
-    open = 8
+    in_arm_check = 7
+    in_arm_open = 8
+    
+    out_arm_check = 9
+    out_arm_open = 10
 
 class Motor:
     def servo_init(self, servo_pin):
-
+        
+        GPIO.setmode(GPIO.BCM)
         # 서보 모터 초기화
         self.servo_pin = servo_pin
         GPIO.setup(self.servo_pin, GPIO.OUT)
@@ -51,6 +55,8 @@ class Motor:
         return (angle / 18.0) + 2.5
     
     def doGuideMotor(self, step):
+        
+        GPIO.setup(self.servo_pin, GPIO.OUT)
         if step == GuideMotorStep.reset:
             self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(0))
         elif step == GuideMotorStep.stop:
@@ -65,6 +71,16 @@ class Motor:
             self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(135))
         elif step == GuideMotorStep.re:
             self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(0))
+        elif step == GuideMotorStep.in_arm_check:
+            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(130))
+        elif step == GuideMotorStep.in_arm_open:
+            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(180))
+        elif step == GuideMotorStep.out_arm_check:
+            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(50))
+        elif step == GuideMotorStep.out_arm_open:
+            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(90))    
+        sleep(0.5)
+        GPIO.setup(self.servo_pin, GPIO.IN)
 
     def doConveyor(self):
         self.pwm_dc.start(0)  # 초기 듀티 사이클은 0으로 설정
@@ -100,3 +116,10 @@ class Motor:
         self.pwm_dc.stop()
         self.pwm_servo.stop()
         GPIO.cleanup()
+        
+    def servoStart(self):
+        self.pwm_servo.start(0)
+        
+    def servoStop(self) :
+        self.pwm_servo.stop()
+        
