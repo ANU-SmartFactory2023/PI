@@ -141,7 +141,7 @@ while running:
             ##################
             # 통신클래스에서 ok 답변을 판단해서 True로 변환 후 반환해줌
             # 따라서 result 엔 "ok" or "wait"가 아니라 True or False 가 대입
-            
+            result = True
             ##################
             if result == True:  # ok면 다음 step
                 current_step = Step.go_rail
@@ -189,7 +189,7 @@ while running:
         case Step.photo_process_sleep:
             # 랜덤값 변수 대입 후 딜레이 (제조 시간 구현)
             print( Step.photo_process_sleep )
-            random_time = random.randint(4, 8)
+            random_time = random.randint(2, 4)
             time.sleep(random_time)
 
             # 딜레이(제조)가 다 끝나면
@@ -202,10 +202,10 @@ while running:
             
             white_pixel = image_value.count_white_pixels()  # 이미지 처리 값
             print(white_pixel)
-            time.sleep(3)
+            time.sleep(1)
             pass_or_fail = server_comm.photolithographyEnd(white_pixel)  # 서버에 값을 전달(result)
             print(pass_or_fail)
-            time.sleep(3)
+            time.sleep(1)
 
             current_step = Step.servo_motor_drive
                 
@@ -273,7 +273,7 @@ while running:
         case Step.sonic_part_process_sleep:
             # 랜덤값 변수 대입 후 딜레이 (제조 시간 구현)
             print( Step.sonic_part_process_sleep )
-            random_time = random.randint(4, 8)
+            random_time = random.randint(2, 4)
             time.sleep(random_time)
 
             # 딜레이(제조)가 다 끝나면

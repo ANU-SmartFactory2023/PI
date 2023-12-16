@@ -91,7 +91,7 @@ sonic_ir_sensor_no2 = InfraredSensor( SONIC_IR_SENSOR_PIN_NO2 )
 relay_ir_sensor = InfraredSensor( RELAY_IR_SENSOR_PIN )
 light_ir_sensor = InfraredSensor( LIGHT_IR_SENSOR_PIN )
 relay_module = RelayModule( RELAY_OUPUT_PIN_NO, RELAY_INPUT_PIN_NO)
-light_sensor = LightSensor(LIGHT_SENSOR_PIN)
+light_sensor = LightSensor(LIGHT_SENSOR_PIN, LED_PIN)
 servercomm = ServerComm()
 dc_motor = Motor().dc_init( dc_enable_pin, dc_input1_pin, dc_input2_pin ) 
 servo_eds_motor = Motor().servo_init( SERVO_EDS_PIN_NO )
@@ -110,14 +110,17 @@ while running:
     LIGHT_IR_SENSOR = light_ir_sensor.measure_ir()
     LIGHT_SENSOR = light_sensor.measure_light()
     
+    light_value = light_sensor.measure_light()
+    print(light_value)
+    
     match current_step :
         case Step.start: 
             print( Step.start )
             servo_eds_motor.doGuideMotor( GuideMotorStep.stop )
             servo_grade_motor.doGuideMotor(GuideMotorStep.stop)
             servo_euv_motor.doGuideMotor(GuideMotorStep.stop)
-            output_arm_servo.doGuideMotor(open)
-            input_arm_servo.doGuideMotor(open)
+            output_arm_servo.doGuideMotor(GuideMotorStep.out_arm_open)
+            input_arm_servo.doGuideMotor(GuideMotorStep.in_arm_open)
             #시작하기전에 검사할것들: 통신확인여부, 모터정렬, 센서 검수
             current_step = Step.second_part_irsensor_check_on
 
@@ -125,13 +128,12 @@ while running:
         case Step.second_part_irsensor_check_on:
                 
             print( Step.second_part_irsensor_check_on )
-            print(SONIC_IR_SENSOR_NO2)
+            
             # 1차 공정 두 번째 적외선 센서 값이 0이면
             if( SONIC_IR_SENSOR_NO2==0 ):
                 current_step = Step.second_part_irsensor_check_off
                 
-                
-            print(current_step)
+                       
                 
             
             # 2차 공정 적외선센서 1 -> 0 확인
@@ -156,14 +158,14 @@ while running:
 
             dc_motor.doConveyor()     
             ## 두 번째 컨베이어벨트 구동 때 로봇 암까지 같이 구동  
-            output_arm_servo.doGuideMotor(check)
-            input_arm_servo.doGuideMotor(check)
+            output_arm_servo.doGuideMotor(GuideMotorStep.out_arm_check)
+            input_arm_servo.doGuideMotor(GuideMotorStep.in_arm_check)
             #########@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#################
             current_step = Step.third_part_irsensor_check
 
         case Step.third_part_irsensor_check:
             print( Step.third_part_irsensor_check )
-            print(RELAY_IR_SENSOR)
+            
             if( RELAY_IR_SENSOR == 0 ):
                 # 이온주입 공정 적외선 센서 값이 1인 상태
                 # 컨베이어 벨트 정지
@@ -238,8 +240,8 @@ while running:
         case Step.servo:
             print( Step.servo )
             
-            output_arm_servo.doGuideMotor(open)
-            input_arm_servo.doGuideMotor(open)
+            output_arm_servo.doGuideMotor(GuideMotorStep.out_arm_open)
+            input_arm_servo.doGuideMotor(GuideMotorStep.in_arm_open)
             servo_eds_motor.doGuideMotor(pass_or_fail_eds)
 
             current_step = Step.final_go_rail
@@ -275,83 +277,87 @@ while running:
 
     ##########################################################################
         case Step.fourth_part_irsensor_post:
-                print(Step.fourth_part_irsensor_post)
+            print(Step.fourth_part_irsensor_post)
 
-                if LIGHT_IR_SENSOR == 0:
-                    # 서버에서 적외선 센서 감지 여부 전송
-                    detect_reply = servercomm.confirmationObject(4, LIGHT_IR_SENSOR, "LIGHT_IR_SENSOR")
-                    # 답변 중 msg 변수에 "ok" 를 확인할 시
-                    if detect_reply == "ok":
-                        current_step = Step.fourth_part_process_start
+            if LIGHT_IR_SENSOR == 0:
+                # 서버에서 적외선 센서 감지 여부 전송
+                detect_reply = servercomm.confirmationObject(4, LIGHT_IR_SENSOR, "LIGHT_IR_SENSOR")
+                # 답변 중 msg 변수에 "ok" 를 확인할 시
+                if detect_reply == "ok":
+                current_step = Step.fourth_part_process_start
 
         case Step.fourth_part_process_start:  # 계산함수 시작조건 - 센서감지
-                print(Step.fourth_part_process_start)
-                start_reply = servercomm.euvLithographyStart()
-                # 조도센서가 임무를 수행
-                # 답변 중 msg 변수에 "ok" 를 확인할 시
-                if start_reply == "ok":
-                    current_step = Step.fourth_part_process_sleep
-                elif start_reply == "fail":
-                    current_step = Step.start
-                time.sleep(5)  # time 모듈을 사용하도록 수정
+            print(Step.fourth_part_process_start)
+            start_reply = servercomm.euvLithographyStart()
+            # 조도센서가 임무를 수행
+            # 답변 중 msg 변수에 "ok" 를 확인할 시
+            if start_reply == "ok":
+                current_step = Step.fourth_part_process_sleep
+            elif start_reply == "fail":
+                current_step = Step.start
+            time.sleep(5)  # time 모듈을 사용하도록 수정
         case Step.fourth_part_process_sleep:
-                # 랜덤값 변수 대입 후 딜레이 (제조 시간 구현)
-                print(Step.fourth_part_process_sleep)
-                random_time = random.randint(4, 8)
-                time.sleep(random_time)
-                # 딜레이(제조)가 다 끝나면
-                current_step = Step.fourth_part_sensor_measure_and_endpost
+            # 랜덤값 변수 대입 후 딜레이 (제조 시간 구현)
+            print(Step.fourth_part_process_sleep)
+            random_time = random.randint(4, 8)
+            time.sleep(random_time)
+            # 딜레이(제조)가 다 끝나면
+            current_step = Step.fourth_part_sensor_measure_and_endpost
                     
 
         case Step.fourth_part_sensor_measure_and_endpost:
-                print(Step.fourth_part_sensor_measure_and_endpost)
-                # LED 불켬 코드 추가
-                GPIO.output(LED_PIN, GPIO.HIGH)
-                # 조도센서값을 판단
-                light_value = light_sensor.measure_light()
-                # 조도센서 값을 서버에 전송
-                end_light = servercomm.euvLithographyEnd(light_value)
-                if end_light == "fail":
-                    pass_or_fail_grade = GuideMotorStep.reset
-                    pass_or_fail_euv = GuideMotorStep.fail
-                else:
-                    if end_light == "left":
-                        pass_or_fail_grade = GuideMotorStep.badGrade
-                        pass_or_fail_euv = GuideMotorStep.good
-                    elif end_light == "right":
-                        pass_or_fail_grade = GuideMotorStep.goodGrade
-                        pass_or_fail_euv = GuideMotorStep.good
-                # LED OFF
-                GPIO.output(LED_PIN, GPIO.LOW)
-                current_step = Step.move_servo
-                time.sleep(5)  # time 모듈을 사용하도록 수정
+            print(Step.fourth_part_sensor_measure_and_endpost)
+            # LED 불켬 코드 추가
+            light_sensor.turn_on_led()
+            time.sleep(0.5)
+            # 조도센서값을 판단
+            light_value = light_sensor.measure_light()
+            print(light_value)
+            # 조도센서 값을 서버에 전송
+            end_light = servercomm.euvLithographyEnd(light_value)
+            if end_light == "fail":
+                pass_or_fail_grade = GuideMotorStep.reset
+                pass_or_fail_euv = GuideMotorStep.fail
+            else:
+                if end_light == "left":
+                    pass_or_fail_grade = GuideMotorStep.badGrade
+                    pass_or_fail_euv = GuideMotorStep.good
+                elif end_light == "right":
+                    pass_or_fail_grade = GuideMotorStep.goodGrade
+                    pass_or_fail_euv = GuideMotorStep.good
+            # LED OFF
+            light_sensor.turn_off_led()
+            current_step = Step.move_servo
+                
 
         case Step.move_servo:
-                print(Step.move_servo)
-                servo_euv_motor.doGuideMotor(pass_or_fail_euv)
-                servo_grade_motor.doGuideMotor(pass_or_fail_grade)
+            print(Step.move_servo)
+            servo_euv_motor.doGuideMotor(pass_or_fail_euv)
+            servo_grade_motor.doGuideMotor(pass_or_fail_grade)
 
-                current_step = Step.go_rail_next_1
-                time.sleep(5)  # time 모듈을 사용하도록 수정
+            current_step = Step.go_rail_next_1
+                
 
         case Step.go_rail_next_1:
-                print(Step.go_rail_next_1)
-                dc_motor.doConveyor()  # 모터를 구동시킴
-                if LIGHT_IR_SENSOR == 1:
-                    servercomm.confirmationObject(4, LIGHT_IR_SENSOR, "LIGHT_IR_SENSOR")
-                    current_step = Step.stop_rail_1
+            print(Step.go_rail_next_1)
+            dc_motor.doConveyor()  # 모터를 구동시킴
+            if LIGHT_IR_SENSOR == 1:
+                servercomm.confirmationObject(4, LIGHT_IR_SENSOR, "LIGHT_IR_SENSOR")
+                current_step = Step.stop_rail_1
 
         case Step.stop_rail_1:
-                if pass_or_fail_euv == GuideMotorStep.fail:
-                    time.sleep(5)  # time 모듈을 사용하도록 수정  # 5초 동안 대기
-                else:
-                    time.sleep(5)  # time 모듈을 사용하도록 수정
+            print(Step.go_rail_next_1)
+            if pass_or_fail_euv == GuideMotorStep.fail:
+                time.sleep(5)  # time 모듈을 사용하도록 수정  # 5초 동안 대기
+            else:
+                time.sleep(5)  # time 모듈을 사용하도록 수정
 
-                dc_motor.stopConveyor()  # 모터를 정지시킴
-                current_step = Step.end_time
+            dc_motor.stopConveyor()  # 모터를 정지시킴
+            current_step = Step.end_time
 
         case Step.end_time:
-                servercomm.confirmationObject(4, LIGHT_IR_SENSOR, "END_TIME")
-                current_step = Step.start    
+            print(Step.end_time)
+            servercomm.confirmationObject(4, LIGHT_IR_SENSOR, "END_TIME")
+            current_step = Step.start    
         
                 
