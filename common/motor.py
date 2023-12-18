@@ -58,13 +58,13 @@ class Motor:
         
         GPIO.setup(self.servo_pin, GPIO.OUT)
         if step == GuideMotorStep.reset:
-            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(0))
+            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(170))
         elif step == GuideMotorStep.stop:
-            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(90))
+            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(170))
         elif step == GuideMotorStep.fail:
-            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(135))
+            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(140))
         elif step == GuideMotorStep.good:
-            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(180))
+            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(90))
         elif step == GuideMotorStep.badGrade:
             self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(45))
         elif step == GuideMotorStep.goodGrade:
@@ -85,7 +85,7 @@ class Motor:
     def doConveyor(self):
         self.pwm_dc.start(0)  # 초기 듀티 사이클은 0으로 설정
         # 속도 설정
-        speed = 80
+        speed = 100
 
         # 밑에 주석이 뭐지?
         # duty_cycle = speed * 1.1 + 10

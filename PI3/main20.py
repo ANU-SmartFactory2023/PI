@@ -1,49 +1,54 @@
-# py3.py
-import random
-import sys, os
-sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+from enum import Enum
 import time
 import signal
+import sys, os
 import RPi.GPIO as GPIO
-from enum import Enum
+import random
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-# 모듈 또는 파일 불러오기
-from common.server_communication import ServerComm
-
-from common.irSensor import InfraredSensor
-from common.relaySensor import RelayModule
-from common.lightSensor import LightSensor
 from common.motor import Motor, GuideMotorStep
+from common.irSensor import InfraredSensor
+from common.server_communication import ServerComm
+from common.imageSensor import ImageCV
+from common.ultrasonicSensor import UltrasonicSensor
+from measure import Measure
 
 
 
-class Step( Enum ) :
-    start=0    
-    second_part_irsensor_check_on = 10 
-    second_part_irsensor_check_off = 15
-    third_part_irsensor_check = 20
-    first_go_rail= 30 
-    first_stop_rail = 40
-    third_part_irsensor_post = 50
-    third_part_process_start = 60
-    third_part_process_sleep = 70
-    # third_part_sensor_measure = 80
-    third_part_sensor_measure_and_endpost = 80
-    third_part_process_end = 90
-    servo = 100
-    final_go_rail = 110
-    final_stop_rail = 120
-########### euv 공정 ###############
-    fourth_part_irsensor_post = 11
-    fourth_part_process_start = 22
-    fourth_part_process_sleep = 33
-    fourth_part_sensor_measure_and_endpost = 44
-    move_servo = 55
-    go_rail_next_1 = 66
-    stop_rail_1 = 77
-    end_time = 88
 
+class Step(Enum):
+    start = 0
+    input_part_sensor_check = 10
+    wait_server_state = 20
+    go_rail = 30
+    photo_part_detect_sensor_check = 50
+    stop_rail = 100
+    #아래 추가
+    photo_process_irsensor_post = 120
 
+    photo_process = 150
+    #아래 추가
+    photo_process_sleep = 200
+
+    photo_measure_and_endpost = 250
+    servo_motor_drive = 300
+    go_rail_next = 350       
+    process_check = 370
+    sonic_part_detect_sensor_check = 400
+    final_stop_rail = 500
+################# 식각 공정 ##########################3
+    sonic_part_sensor_check = 600    
+    sonic_part_process_sleep = 650
+    sonic_part_slow_go = 670
+    measure_start = 700   
+    sonic_stop_rail = 800
+    calculated_values_send = 900
+    sonic_servo_motor_drive = 1000
+    sonic_part_final_go_rail = 1050
+    sonic_process_check = 1100
+    go_rail_relay = 1200
+
+# ctrl + c 누르면 프로그램 정상 종료 ( gpio 초기화 등등ㅇ)
 def signal_handler(sig, frame):
     print("\n프로그램 종료. GPIO 정리 중...")
     GPIO.cleanup()  # GPIO 정리
@@ -53,311 +58,301 @@ def signal_handler(sig, frame):
 # SIGINT (Ctrl+C) 시그널에 대한 핸들러 등록
 signal.signal(signal.SIGINT, signal_handler)
 GPIO.cleanup()  # GPIO 정리
-   
-pass_or_fail_eds = ''
-pass_or_fail_euv = ''
-pass_or_fail_grade = ''
-# GPIO 핀 번호 설정
-# 서보 모터 핀
-SERVO_EDS_PIN_NO = 21
-SERVO_EUV_PIN = 20
-SERVO_GRADE_PIN = 16
-RELAY_IN_ARM_PIN_NO = 2
-RELAY_OUT_ARM_PIN_NO = 3
 
-# DC모터 핀
+
+# 기본설정
+current_step = Step.start
+running = True
+pass_or_fail = ''   #서버에서 주는 담아주는 값이 string 형태
+
+# 값계산 함수 기본변수
+min = 3
+max = 8
+measure = Measure( min, max )
+
+# 적외선 센서 핀 번호
+INPUT_IR_SENSOR_PIN = 24
+IMAGE_IR_SENSOR_PIN = 23
+SONIC_IR_SENSOR_PIN_NO1 = 18
+SONIC_IR_SENSOR_PIN_NO2 = 15
+RELAY_IR_SENSOR_PIN = 14
+# 소닉센서 핀
+UltraSonic_trig_pin_NO = 7
+UltraSonic_echo_pin_NO = 1
+# MOTOR 핀 번호
 dc_enable_pin = 17
 dc_input1_pin = 27
 dc_input2_pin = 22
+servo_photo_pin = 21
+servo_sonic_pin = 20
 
-# 적외선 센서 핀
-SONIC_IR_SENSOR_PIN_NO2 = 4
-RELAY_IR_SENSOR_PIN  = 15
-LIGHT_IR_SENSOR_PIN = 18
+dc_motor = Motor().dc_init(dc_enable_pin, dc_input1_pin, dc_input2_pin)
+servo_photo_motor = Motor().servo_init(servo_photo_pin)  # 모터 핀 번호
+servo_sonic_motor = Motor().servo_init(servo_sonic_pin)  # 모터 핀 번호
 
-# # 릴레이 센서 핀
-RELAY_OUPUT_PIN_NO = 1
-RELAY_INPUT_PIN_NO = 12
 
-# 조도센서 LED핀
-LIGHT_SENSOR_PIN = 19
-LED_PIN = 26
-    
-
-current_step = Step.start
-running = True
-
-sonic_ir_sensor_no2 = InfraredSensor( SONIC_IR_SENSOR_PIN_NO2 )
+# 함수참조
+Input_ir_sensor = InfraredSensor(INPUT_IR_SENSOR_PIN)
+Image_ir_sensor = InfraredSensor(IMAGE_IR_SENSOR_PIN)
+Sonic_ir_sensor1 = InfraredSensor(SONIC_IR_SENSOR_PIN_NO1)
+sonic_ir_sensor_2 = InfraredSensor( SONIC_IR_SENSOR_PIN_NO2 )
 relay_ir_sensor = InfraredSensor( RELAY_IR_SENSOR_PIN )
-light_ir_sensor = InfraredSensor( LIGHT_IR_SENSOR_PIN )
-relay_module = RelayModule( RELAY_OUPUT_PIN_NO, RELAY_INPUT_PIN_NO)
-light_sensor = LightSensor(LIGHT_SENSOR_PIN, LED_PIN)
-servercomm = ServerComm()
-dc_motor = Motor().dc_init( dc_enable_pin, dc_input1_pin, dc_input2_pin ) 
-servo_eds_motor = Motor().servo_init( SERVO_EDS_PIN_NO )
-servo_euv_motor = Motor().servo_init(SERVO_EUV_PIN)  # 주파수 50Hz
-servo_grade_motor = Motor().servo_init(SERVO_GRADE_PIN)
+sonic_module = UltrasonicSensor( UltraSonic_trig_pin_NO, UltraSonic_echo_pin_NO, ) #소닉센서핀
 
-output_arm_servo = Motor().servo_init( RELAY_OUT_ARM_PIN_NO )
-input_arm_servo = Motor().servo_init( RELAY_IN_ARM_PIN_NO )
+image_value = ImageCV()
+server_comm = ServerComm()
 
+
+
+
+
+dc_motor.stopConveyor()  # DC모터 정지
 
 while running:
-    print( "running : " + str( running ) )# 디버깅확인용
-    time.sleep( 0.1 )
-    SONIC_IR_SENSOR_NO2 = sonic_ir_sensor_no2.measure_ir()
+    print("running : " + str(running))  # 디버깅확인용
+
+    
+    time.sleep(0.1)
+    INPUT_IR_SENSOR = Input_ir_sensor.measure_ir()
+    IMAGE_IR_SENSOR = Image_ir_sensor.measure_ir()
+    SONIC_IR_SENSOR_NO1 = Sonic_ir_sensor1.measure_ir()
+    SONIC_IR_SENSOR_NO2 = sonic_ir_sensor_2.measure_ir()
     RELAY_IR_SENSOR = relay_ir_sensor.measure_ir()
-    LIGHT_IR_SENSOR = light_ir_sensor.measure_ir()
-    LIGHT_SENSOR = light_sensor.measure_light()
-    
-    light_value = light_sensor.measure_light()
-    print(light_value)
-    
-    match current_step :
-        case Step.start: 
-            print( Step.start )
-            servo_eds_motor.doGuideMotor( GuideMotorStep.stop )
-            servo_grade_motor.doGuideMotor(GuideMotorStep.stop)
-            servo_euv_motor.doGuideMotor(GuideMotorStep.stop)
-            output_arm_servo.doGuideMotor(GuideMotorStep.out_arm_open)
-            input_arm_servo.doGuideMotor(GuideMotorStep.in_arm_open)
-            #시작하기전에 검사할것들: 통신확인여부, 모터정렬, 센서 검수
-            current_step = Step.second_part_irsensor_check_on
 
-            # 2차 공정 적외선센서 0 -> 1 확인
-        case Step.second_part_irsensor_check_on:
-                
-            print( Step.second_part_irsensor_check_on )
+    match current_step:
+        case Step.start:  # 초기 상태, 시스템 시작
+            print(Step.start)
+            servo_photo_motor.doGuideMotor( GuideMotorStep.stop )  # 서보 정렬
+            servo_sonic_motor.doGuideMotor( GuideMotorStep.stop )
+            # 시작하기전에 검사할 것들 : 통신확인여부, 모터정렬, 센서 검수
+            current_step = Step.input_part_sensor_check
+        
+        case Step.input_part_sensor_check:
+            print(Step.input_part_sensor_check)
+            if (INPUT_IR_SENSOR == 0):
+                # 1번핀의 감지상태
+                a= server_comm.confirmationObject( 1, INPUT_IR_SENSOR, "INPUT_IR_SENSOR")
+                current_step = Step.wait_server_state
             
-            # 1차 공정 두 번째 적외선 센서 값이 0이면
-            if( SONIC_IR_SENSOR_NO2==0 ):
-                current_step = Step.second_part_irsensor_check_off
-                
-                       
-                
+        case Step.wait_server_state:  # 서버로부터 ok 받을 때까지 대기 (통신)
+            print(Step.wait_server_state)
+            result = server_comm.ready()  # get으로 물어보는 함수호출 서버에게 현재상태 물어봄
+            time.sleep(1)
+            ##################
+            # 통신클래스에서 ok 답변을 판단해서 True로 변환 후 반환해줌
+            # 따라서 result 엔 "ok" or "wait"가 아니라 True or False 가 대입
+            result = True
+            ##################
+            if result == True:  # ok면 다음 step
+                current_step = Step.go_rail
+            else:
+                pass
             
-            # 2차 공정 적외선센서 1 -> 0 확인
-        case Step.second_part_irsensor_check_off:          
-            print( Step.second_part_irsensor_check_off )
-                
-            # 2차 공정 두 번째 적외선 센서 값이 1이면
-            if( SONIC_IR_SENSOR_NO2==1 ):
-                    
-                second_Rail_Start = servercomm.check_second_process()
-                print(second_Rail_Start)
+        case Step.go_rail:  # DC모터 구동
+            print(Step.go_rail)
+            dc_motor.doConveyor()
+            current_step = Step.photo_part_detect_sensor_check
 
-                # GET 통신 요청해서 답변
-                if( second_Rail_Start== True):
-                    current_step = Step.first_go_rail
-                else:
-                    current_step = Step.start
-                    
-        # 두 번째 컨베이어 벨트 구동
-        case Step.first_go_rail:
-            print( Step.first_go_rail )
+        case Step.photo_part_detect_sensor_check:  # 포토공정 적외선센서 감지 상태 확인
+            print(Step.photo_part_detect_sensor_check)
+            if (IMAGE_IR_SENSOR == 0):
+                current_step = Step.stop_rail
 
-            dc_motor.doConveyor()     
-            ## 두 번째 컨베이어벨트 구동 때 로봇 암까지 같이 구동  
-            output_arm_servo.doGuideMotor(GuideMotorStep.out_arm_check)
-            input_arm_servo.doGuideMotor(GuideMotorStep.in_arm_check)
-            #########@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#################
-            current_step = Step.third_part_irsensor_check
-
-        case Step.third_part_irsensor_check:
-            print( Step.third_part_irsensor_check )
-            
-            if( RELAY_IR_SENSOR == 0 ):
-                # 이온주입 공정 적외선 센서 값이 1인 상태
-                # 컨베이어 벨트 정지
-                current_step = Step.first_stop_rail 
-                #else:             
-                # 이온주입 공정 적외선 센서 값이 0인 상태 
-                #    print("제품 도착 전")
-                #    current_step = Step.third_part_irsensor_check
-
-        case Step.first_stop_rail:
-            # 적외선 센서 감지로 컨베이어벨트 중단
-            print( Step.first_stop_rail )
+        case Step.stop_rail:  # DC모터 정지
+            print(Step.stop_rail)
             dc_motor.stopConveyor()
-            current_step = Step.third_part_irsensor_post
+            current_step = Step.photo_process_irsensor_post
+        #########################################################
 
-        case Step.third_part_irsensor_post:
-            print( Step.third_part_irsensor_post )
+        #포토 공정 적외선센서 감지 시 on 센서값 서버에게 전송 STEP 추가
+        case Step.photo_process_irsensor_post:
+            print( Step.photo_process_irsensor_post )
             # 서버에게 적외선 센서 감지 여부 전송
-            detect_reply = servercomm.confirmationObject(3, RELAY_IR_SENSOR, "RELAY_IR_SENSOR")
-            print(detect_reply)
+            start_reply = server_comm.confirmationObject(1, IMAGE_IR_SENSOR, "IMAGE_IR_SENSOR")
+            
+            print(start_reply)
 
-            # 답변 중 msg 변수에 "ok" 를 확인할 시
-            if( detect_reply == "ok"):
-                current_step = Step.third_part_process_start
-                
-
-        case Step.third_part_process_start:
-            print( Step.third_part_process_start )
-            start_reply = servercomm.edsStart()
-
-                
-            # 제조 시작을 알리는 ionlmplantationStart() 함수 호출
             # 답변 중 msg 변수에 "ok" 를 확인할 시
             if( start_reply == "ok"):
-                current_step = Step.third_part_process_sleep
-                
+                current_step = Step.photo_process
+        ##############################################################
 
-        case Step.third_part_process_sleep:
+
+
+        case Step.photo_process:    # POST( 통신 )
+            print(Step.photo_process)
+            server_comm.photolithographyStart()    # 서버에게 이미지처리 시작하도록 알림
+
+            if( start_reply == "ok"):
+                current_step = Step.photo_process_sleep
+
+        case Step.photo_process_sleep:
             # 랜덤값 변수 대입 후 딜레이 (제조 시간 구현)
-            print( Step.third_part_process_sleep )
-            random_time = random.randint(4, 8)
+            print( Step.photo_process_sleep )
+            random_time = random.randint(2, 4)
             time.sleep(random_time)
 
             # 딜레이(제조)가 다 끝나면
-            current_step = Step.third_part_sensor_measure_and_endpost
+            current_step = Step.photo_measure_and_endpost
 
-        # 3차 공정 품질 검사 센서값 추출
-        case Step.third_part_sensor_measure_and_endpost:
-            print( Step.third_part_sensor_measure_and_endpost )
-            # 릴레이 모듈 값을 전도성 판단
-            # 테스트로 아래 문장 주석 처리
-            relay_value = relay_module.turn_on_relay()
-            print(relay_value)
-            #relay_value = 1
-            # 릴레이 모듈 값을 서버에 전송
-            end_reply = servercomm.edsEnd(relay_value)
+        #################################################################
 
-            print (end_reply)
-
-                # 답변 따라 GuideMotorStep(good or fail) 클래스 Enum 설정
-            if(end_reply == "pass"):
-                pass_or_fail_eds = GuideMotorStep.good
-            else:
-                pass_or_fail_eds = GuideMotorStep.fail
-                
-
-            current_step = Step.servo
-                
-        # doGuideMotor(motor_step) 함수를 호출하여 서보모터 작동
-        # 로봇팔도 진행 방향 오픈
-        ###################3@@@@@@@@@@@@@@@@@@@@@@@@@
-        case Step.servo:
-            print( Step.servo )
+        case Step.photo_measure_and_endpost:
+            print( Step.photo_measure_and_endpost )
             
-            output_arm_servo.doGuideMotor(GuideMotorStep.out_arm_open)
-            input_arm_servo.doGuideMotor(GuideMotorStep.in_arm_open)
-            servo_eds_motor.doGuideMotor(pass_or_fail_eds)
+            white_pixel = image_value.count_white_pixels()  # 이미지 처리 값
+            print(white_pixel)
+            time.sleep(1)
+            pass_or_fail = server_comm.photolithographyEnd(white_pixel)  # 서버에 값을 전달(result)
+            print(pass_or_fail)
+            time.sleep(1)
 
-            current_step = Step.final_go_rail
+            current_step = Step.servo_motor_drive
+                
+        case Step.servo_motor_drive:  # p or f 따라 서보모터 제어
+            print( Step.servo_motor_drive )
 
-            # 서보모터 동작 후 컨베이어벨트 구동
-        case Step.final_go_rail:
-            print( Step.final_go_rail)
-            print( RELAY_IR_SENSOR )
+            
+            if (pass_or_fail == 'fail'):
+                motor_step = GuideMotorStep.fail
+            else:
+                motor_step = GuideMotorStep.good
+
+            servo_photo_motor.doGuideMotor(motor_step)
+            #아직 dc모터 구동 x 상황(적외선 센서 on) 이면 
+            #server_comm.confirmationObject( 1, IMAGE_IR_SENSOR, "IMAGE_IR_SENSOR" )
+            current_step = Step.go_rail_next
+
+        case Step.go_rail_next:  # DC모터 재구동, 다음 단계로 이동
+            print(Step.go_rail_next)                
             dc_motor.doConveyor()
-                #######################################
-            if(RELAY_IR_SENSOR == 1):
-                servercomm.confirmationObject(3, RELAY_IR_SENSOR, "RELAY_IR_SENSOR")
-                current_step = Step.final_stop_rail
+            # 컨베이어 움직여야 적외선 센서가 1이 되고 off를 서버로 보낼 수 있다.
+            if(IMAGE_IR_SENSOR == 1):
+                server_comm.confirmationObject( 1, IMAGE_IR_SENSOR, "IMAGE_IR_SENSOR" )
+                current_step = Step.process_check
             
-            
-        case Step.final_stop_rail:
-            print( Step.final_stop_rail)
-            # 4차 공정 적외선 센서 값으로 컨베이어벨트 정지 타이밍
-            if(pass_or_fail_eds == GuideMotorStep.good):
-                if(LIGHT_IR_SENSOR == 0):
-                    dc_motor.stopConveyor()
-                    current_step = Step.fourth_part_irsensor_post
-            # 불량품 판정을 받았을 때 컨베이어벨트 정지 타이밍                                 
-            else:
-                print(pass_or_fail_eds)
+        case Step.process_check:
+            print(Step.process_check)                
+
+            ####################################################
+            if pass_or_fail == 'good':  # 불량이므로 5초 대기
+                #테스트 용도로 수정함 원래는 'fail'
+            ####################################################
                 time.sleep(5)
                 dc_motor.stopConveyor()
                 current_step = Step.start
+            else:
+                current_step = Step.sonic_part_detect_sensor_check
 
+        case Step.sonic_part_detect_sensor_check:  # 적외선 물체 감지
+            print(Step.sonic_part_detect_sensor_check)
 
-
-
-
-    ##########################################################################
-        case Step.fourth_part_irsensor_post:
-            print(Step.fourth_part_irsensor_post)
-
-            if LIGHT_IR_SENSOR == 0:
-                # 서버에서 적외선 센서 감지 여부 전송
-                detect_reply = servercomm.confirmationObject(4, LIGHT_IR_SENSOR, "LIGHT_IR_SENSOR")
-                # 답변 중 msg 변수에 "ok" 를 확인할 시
-                if detect_reply == "ok":
-                    current_step = Step.fourth_part_process_start
-
-        case Step.fourth_part_process_start:  # 계산함수 시작조건 - 센서감지
-            print(Step.fourth_part_process_start)
-            start_reply = servercomm.euvLithographyStart()
-            # 조도센서가 임무를 수행
-            # 답변 중 msg 변수에 "ok" 를 확인할 시
-            if start_reply == "ok":
-                current_step = Step.fourth_part_process_sleep
-            elif start_reply == "fail":
-                current_step = Step.start
-            time.sleep(5)  # time 모듈을 사용하도록 수정
-        case Step.fourth_part_process_sleep:
-            # 랜덤값 변수 대입 후 딜레이 (제조 시간 구현)
-            print(Step.fourth_part_process_sleep)
-            random_time = random.randint(4, 8)
-            time.sleep(random_time)
-            # 딜레이(제조)가 다 끝나면
-            current_step = Step.fourth_part_sensor_measure_and_endpost
+            if( SONIC_IR_SENSOR_NO1 == 0 ):
+                # 들여쓰기 
+                current_step = Step.final_stop_rail
                     
 
-        case Step.fourth_part_sensor_measure_and_endpost:
-            print(Step.fourth_part_sensor_measure_and_endpost)
-            # LED 불켬 코드 추가
-            light_sensor.turn_on_led()
-            time.sleep(0.5)
-            # 조도센서값을 판단
-            light_value = light_sensor.measure_light()
-            print(light_value)
-            # 조도센서 값을 서버에 전송
-            end_light = servercomm.euvLithographyEnd(light_value)
-            if end_light == "fail":
-                pass_or_fail_grade = GuideMotorStep.reset
-                pass_or_fail_euv = GuideMotorStep.fail
-            else:
-                if end_light == "left":
-                    pass_or_fail_grade = GuideMotorStep.badGrade
-                    pass_or_fail_euv = GuideMotorStep.good
-                elif end_light == "right":
-                    pass_or_fail_grade = GuideMotorStep.goodGrade
-                    pass_or_fail_euv = GuideMotorStep.good
-            # LED OFF
-            light_sensor.turn_off_led()
-            current_step = Step.move_servo
+        case Step.final_stop_rail:  # DC모터 천천히 구동
+            print(Step.final_stop_rail)
+            dc_motor.stopConveyor()
+
+            current_step = Step.sonic_part_sensor_check
+######################### 식각공정 ############################3
+        case Step.sonic_part_sensor_check:  #1번 초음파 센서에 감지
+            print( Step.sonic_part_sensor_check )
+
+            if( SONIC_IR_SENSOR_NO1 == 0):
                 
+                # 감지상태
+                # 서버에게 센서 감지상태를 포스트로 전달한다.
+                server_comm.confirmationObject( 2, SONIC_IR_SENSOR_NO1,'SONIC_IR_SENSOR_NO1' )
+                server_comm.etchingStart()
+                current_step = Step.sonic_part_process_sleep
 
-        case Step.move_servo:
-            print(Step.move_servo)
-            servo_euv_motor.doGuideMotor(pass_or_fail_euv)
-            servo_grade_motor.doGuideMotor(pass_or_fail_grade)
-
-            current_step = Step.go_rail_next_1
-                
-
-        case Step.go_rail_next_1:
-            print(Step.go_rail_next_1)
-            dc_motor.doConveyor()  # 모터를 구동시킴
-            if LIGHT_IR_SENSOR == 1:
-                servercomm.confirmationObject(4, LIGHT_IR_SENSOR, "LIGHT_IR_SENSOR")
-                current_step = Step.stop_rail_1
-
-        case Step.stop_rail_1:
-            print(Step.stop_rail_1)
-            if pass_or_fail_euv == GuideMotorStep.fail:
-                time.sleep(5)  # time 모듈을 사용하도록 수정  # 5초 동안 대기
-            else:
-                time.sleep(5)  # time 모듈을 사용하도록 수정
-
-            dc_motor.stopConveyor()  # 모터를 정지시킴
-            current_step = Step.end_time
-
-        case Step.end_time:
-            print(Step.end_time)
-            servercomm.confirmationObject(4, LIGHT_IR_SENSOR, "END_TIME")
-            current_step = Step.start    
         
+        case Step.sonic_part_process_sleep:
+            # 랜덤값 변수 대입 후 딜레이 (제조 시간 구현)
+            print( Step.sonic_part_process_sleep )
+            random_time = random.randint(2, 4)
+            time.sleep(random_time)
+
+            # 딜레이(제조)가 다 끝나면
+            current_step = Step.sonic_part_slow_go
+
+        case Step.sonic_part_slow_go:
+            # 단차 측정을 위해 dc 모터 천천히 구동
+            print( Step.sonic_part_slow_go )
+            dc_motor.slowConveyor()
+            
+            current_step = Step.measure_start
+       
+            
+        case Step.measure_start:
+            print( Step.measure_start )
+            value = sonic_module.measure_distance ()  # 초음파센서값
+
+            print(value)
+            
+            measure.add( value ) # measure에 값 삽입
+           
+            if(SONIC_IR_SENSOR_NO1 == 1):     #서버에 부하가 생기면 스텝으로 따로 빼야함 
+                server_comm.confirmationObject( 2, SONIC_IR_SENSOR_NO1,'SONIC_IR_SENSOR_NO1' )    
+
+            if(SONIC_IR_SENSOR_NO2 == 0 ): #2번 적외선센서 도달      
+                print("sonic 2 detect")          
+                server_comm.confirmationObject( 2 , SONIC_IR_SENSOR_NO2,'SONIC_IR_SENSOR_NO2' )
+                current_step = Step.sonic_stop_rail
+
+        case Step.sonic_stop_rail:
+            print( Step.sonic_stop_rail )
+            dc_motor.stopConveyor()#DC모터 정지            
+            current_step = Step.calculated_values_send
+
+        case Step.calculated_values_send:
+            print( Step.calculated_values_send )
+
+            result = measure.getAverage()     # 값계산          
+
+            pass_or_fail = server_comm.etchingEnd( result )  #서버에 값송신
+            current_step = Step.sonic_servo_motor_drive
                 
+        case Step.sonic_servo_motor_drive:
+            print( Step.sonic_servo_motor_drive )       
+            
+            if( pass_or_fail == 'fail'):                 #서버에서 받은 불량기준
+                motor_step = GuideMotorStep.fail
+            else :
+                motor_step = GuideMotorStep.good
+
+            servo_sonic_motor.doGuideMotor( motor_step )    #위에 따라서 모터구동 
+            current_step = Step.sonic_part_final_go_rail
+
+        case Step.sonic_part_final_go_rail:
+            # dc 모터 구동
+            print( Step.sonic_part_final_go_rail )
+            dc_motor.doConveyor()
+            time.sleep(0.5)
+            
+            current_step = Step.sonic_process_check
+   
+
+        case Step.sonic_process_check:    #불량여부에 따라서 프로세스 수정
+            print( Step.sonic_process_check )
+            
+
+            if(SONIC_IR_SENSOR_NO2 == 1):
+                server_comm.confirmationObject( 2 , SONIC_IR_SENSOR_NO2,'SONIC_IR_SENSOR_NO2' )
+                if(pass_or_fail == 'fail'): #2번 적외선센서 off                             
+                    time.sleep(5)       
+                    dc_motor.stopConveyor()     
+                    current_step = Step.start
+                else :                              
+                    current_step = Step.go_rail_relay
+
+            
+        
+        case Step.go_rail_relay:
+            print( Step.go_rail_relay )
+            if( RELAY_IR_SENSOR == 0):
+                dc_motor.stopConveyor()         
+                current_step = Step.start
