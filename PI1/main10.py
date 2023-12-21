@@ -15,7 +15,6 @@ from measure import Measure
 
 
 
-
 class Step(Enum):
     start = 0
     input_part_sensor_check = 10
@@ -212,7 +211,7 @@ while running:
         case Step.servo_motor_drive:  # p or f 따라 서보모터 제어
             print( Step.servo_motor_drive )
 
-            motor_step = servo_photo_motor.doGuideMotor(GuideMotorStep.stop)
+            
             if (pass_or_fail == 'fail'):
                 motor_step = GuideMotorStep.fail
             else:
@@ -224,7 +223,8 @@ while running:
             current_step = Step.go_rail_next
 
         case Step.go_rail_next:  # DC모터 재구동, 다음 단계로 이동
-            print(Step.go_rail_next)                
+            print(Step.go_rail_next)  
+                                        
             dc_motor.doConveyor()
             # 컨베이어 움직여야 적외선 센서가 1이 되고 off를 서버로 보낼 수 있다.
             if(IMAGE_IR_SENSOR == 1):
@@ -235,7 +235,7 @@ while running:
             print(Step.process_check)                
 
             ####################################################
-            if pass_or_fail == 'good':  # 불량이므로 5초 대기
+            if pass_or_fail == 'fail':  # 불량이므로 5초 대기
                 #테스트 용도로 수정함 원래는 'fail'
             ####################################################
                 time.sleep(5)
@@ -318,7 +318,7 @@ while running:
                 
         case Step.sonic_servo_motor_drive:
             print( Step.sonic_servo_motor_drive )       
-            motor_step = GuideMotorStep.stop    #기본 stop
+            
             if( pass_or_fail == 'fail'):                 #서버에서 받은 불량기준
                 motor_step = GuideMotorStep.fail
             else :
