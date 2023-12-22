@@ -69,17 +69,17 @@ class Motor:
         elif step == GuideMotorStep.good:
             self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(90))
         elif step == GuideMotorStep.badGrade:
-            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(45))
+            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(110))
         elif step == GuideMotorStep.goodGrade:
-            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(135))
+            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(160))
         elif step == GuideMotorStep.re:
             self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(0))
         elif step == GuideMotorStep.in_arm_check:
-            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(130))
+            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(140))
         elif step == GuideMotorStep.in_arm_open:
             self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(180))
         elif step == GuideMotorStep.out_arm_check:
-            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(50))
+            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(60))
         elif step == GuideMotorStep.out_arm_open:
             self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(90))    
         sleep(0.5)
