@@ -2,6 +2,8 @@
 import http.client
 import json
 
+
+
 #적외선 센서와 2차 센서 역할이 다름으로 모델 추가 및 변경
 from common.models import SensorModel
 from common.models import ProcessModel
@@ -39,14 +41,18 @@ class ServerComm :
     # HTTP 통신 Process Post 정의
     def ProcessRequestPost( self, url, p:ProcessModel ) :
         result = ""
+        
         try:
             p.processValue = round( p.processValue,2)
+            
+            
             # p 클래스 변수들을 딕셔너리 형태로 변환 후 전송
             self.conn.request( 'POST', url, json.dumps( p.__dict__ ), self.headers )
             # getresponse()를 호출하면 http.client.HTTPResponse 객체 반환
             # read() 메서드를 호출하여 응답 데이터를 읽고
             # decode()를 사용하여 해당 데이터를 문자열로 디코딩
             result = self.conn.getresponse().read().decode()
+            
         except:
             result = self.fail_msg
 
@@ -171,28 +177,28 @@ class ServerComm :
 
     # 포토 공정 시작 시간 전송
     def photolithographyStart( self ):
-        return self.__checkProcess( 1, "start", "photolithography", "0")
+        return self.__checkProcess( 1, "start", "photolithography", 0)
     # 포토 공정 종료 타이밍과 센서값 전송
     def photolithographyEnd( self, processValue):
         return self.__checkProcess( 1, "end", "photolithography", processValue)
     
     # 식각 공정 시작
     def etchingStart( self ):
-        return self.__checkProcess( 2, "start", "etching", "0")
+        return self.__checkProcess( 2, "start", "etching", 0)
     # 식각 공정 종료 
     def etchingEnd( self, processValue):
         return self.__checkProcess( 2, "end", "etching", processValue)
 
     # EDS 공정 시작 
     def edsStart( self ):
-        return self.__checkProcess( 3, "start", "eds", "0")
+        return self.__checkProcess( 3, "start", "eds", 0)
     # EDS 공정 종료
     def edsEnd( self, processValue):
         return self.__checkProcess( 3, "end", "eds", processValue)
 
     # euv 인쇄 과정 시작 
     def euvLithographyStart( self ):
-        return self.__checkProcess( 4, "start", "euvLithography", "0")
+        return self.__checkProcess( 4, "start", "euvLithography", 0)
     # 후공정 종료
     def euvLithographyEnd( self, processValue):
         return self.__checkProcess( 4, "end", "euvLithography", processValue) 
@@ -203,7 +209,7 @@ class ServerComm :
         p = ProcessModel()
         p.processCmd = processCmd
         p.processName = processName
-        p.processValue = processValue
+        p.processValue = float(processValue)
 
         res = self.ProcessRequestPost( f'/pi/process/{idx}', p )
 
