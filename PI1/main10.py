@@ -140,7 +140,7 @@ while running:
             ##################
             # 통신클래스에서 ok 답변을 판단해서 True로 변환 후 반환해줌
             # 따라서 result 엔 "ok" or "wait"가 아니라 True or False 가 대입
-            result = True
+            # result = True
             ##################
             if result == True:  # ok면 다음 step
                 current_step = Step.go_rail
@@ -238,7 +238,7 @@ while running:
             if pass_or_fail == 'fail':  # 불량이므로 5초 대기
                 #테스트 용도로 수정함 원래는 'fail'
             ####################################################
-                time.sleep(5)
+                time.sleep(7)
                 dc_motor.stopConveyor()
                 current_step = Step.start
             else:
@@ -283,7 +283,7 @@ while running:
             # 단차 측정을 위해 dc 모터 천천히 구동
             print( Step.sonic_part_slow_go )
             dc_motor.slowConveyor()
-            
+            time.sleep(1)
             current_step = Step.measure_start
        
             
@@ -343,7 +343,7 @@ while running:
             if(SONIC_IR_SENSOR_NO2 == 1):
                 server_comm.confirmationObject( 2 , SONIC_IR_SENSOR_NO2,'SONIC_IR_SENSOR_NO2' )
                 if(pass_or_fail == 'fail'): #2번 적외선센서 off                             
-                    time.sleep(5)       
+                    time.sleep(7)       
                     dc_motor.stopConveyor()     
                     current_step = Step.start
                 else :                              

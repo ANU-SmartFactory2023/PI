@@ -7,4 +7,4 @@ class SensorModel:
 class ProcessModel:
     processCmd:str
     processName:str
-    processValue:str
+    processValue:float

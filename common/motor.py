@@ -65,7 +65,7 @@ class Motor:
         elif step == GuideMotorStep.stop:
             self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(170))
         elif step == GuideMotorStep.fail:
-            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(140))
+            self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(130))
         elif step == GuideMotorStep.good:
             self.pwm_servo.ChangeDutyCycle(self.changeDutyCycle(90))
         elif step == GuideMotorStep.badGrade:
@@ -104,7 +104,7 @@ class Motor:
     def slowConveyor(self):
         GPIO.output(self.dc_input1_pin, GPIO.HIGH)
         GPIO.output(self.dc_input2_pin, GPIO.LOW)
-        speed = 60  # 속도 설정
+        speed = 95  # 속도 설정
         #duration = 3    # 3초간 50으로 구동
         #self.doConveyor(speed)
         self.pwm_dc.ChangeDutyCycle(speed)

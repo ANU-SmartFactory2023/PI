@@ -12,7 +12,7 @@ class ImageCV:
     # 매개변수 image를 삭제하고 count_white_pixels 함수에 image 변수 집어넣음
     def count_white_pixels(self):
 
-        image = self.cap.read()  # cv2.VideoCapture.read()은 반환값이 두 개입니다.
+        image = self.cap.read()[1]
 
         # 이미지를 흑백으로 변환
         gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -20,8 +20,8 @@ class ImageCV:
         # 가우시안 블러를 사용하여 입력 영상의 잡음 제거
         blurred_image = cv2.GaussianBlur(gray_image, (5, 5), 0)
 
-        # 이진화를 위한 임계값 설정 (두 번째 반환 값 사용)
-        _, binary_image = cv2.threshold(blurred_image, 190, 255, cv2.THRESH_BINARY)
+        # 이진화를 위한 임계값 설정 (여기서는 40을 기준으로 이진화)
+        _, binary_image = cv2.threshold(blurred_image, 160, 255, cv2.THRESH_BINARY)
 
         # 흰색 픽셀 수 계산
         white_pixel_count = np.sum(binary_image == 255)
